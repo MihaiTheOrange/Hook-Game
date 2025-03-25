@@ -35,17 +35,19 @@ void Game::initBackground()
 
 
 // Constructor / Desctructor
-Game::Game()
+Game::Game() : test_level("Assets/Levels/Test_level/test.txt", "Assets/Levels/Test_level/Snow.png")
 {
 	this->initVariables();
 	this->initWindow();
-	this->initBackground();
+	this->test_level.InitView(*window);
+	//this->initBackground();
 	this->player.setPosition({0.f, window->getSize().y - player.getPlayerHeight()});
 }
 
 Game::~Game()
 {
 	delete this->window;
+	delete this->backgroundSprite;
 }
 
 
@@ -82,7 +84,7 @@ void Game::pollEvents()
 void Game::update(float dt)
 {
 	this->pollEvents();
-	player.update(dt);
+	player.update(dt, test_level);
 }
 
 void Game::render()
@@ -93,8 +95,9 @@ void Game::render()
 		- Arata cadrul nou in fereastra
 	*/
 
-	window->clear({ 10, 0, 160, 1 });
-	window->draw(*this->backgroundSprite);
+	window->clear();
+	//window->draw(*this->backgroundSprite);
+	this->test_level.DrawLevel(*window);
 	this->player.render(*window);
 	window->display();
 }

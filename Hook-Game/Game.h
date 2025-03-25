@@ -5,6 +5,8 @@
 #include <SFML/Window.hpp>
 #include <SFML/Audio.hpp>
 #include "Player.h"
+#include "Level.h"
+
 
 /*
 	Clasa va fi engine-ul jocului
@@ -21,6 +23,7 @@ private:
 	sf::Sprite *backgroundSprite;
 
 	Player player;
+	Level test_level;
 
 	//Metode private
 	void initVariables();
