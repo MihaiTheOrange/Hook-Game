@@ -111,10 +111,17 @@ void Level::test_afis_nivel()
 
 int* Level::operator[](int index)
 {
+	if (index >= rows || index < 0)
+		return levelMatrix[0];
 	return levelMatrix[index];
 }
 
 int Level::getTileSize()
 {
 	return this->tileSize*2;
+}
+
+int Level::getLevelHeight() //*2 pentru ca tile-urile sunt scalate(SCAPA DE SCALARE)
+{
+	return this->rows * this->tileSize * 2;
 }

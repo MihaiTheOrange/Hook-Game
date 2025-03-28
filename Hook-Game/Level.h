@@ -28,5 +28,6 @@ public:
 	void test_afis_nivel();
 	int* operator[](int index);
 	int getTileSize();
+	int getLevelHeight();
 };
 
