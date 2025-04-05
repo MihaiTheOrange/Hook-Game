@@ -24,9 +24,14 @@ public:
 	void InitView(sf::RenderWindow& window);
 	Level(const char* filename, const char* tilefile);
 	~Level();
+	
 	void DrawLevel(sf::RenderWindow &window);
+	
 	void test_afis_nivel();
+
 	int* operator[](int index);
+	sf::Vector2f getTilePosition(int row, int column);
+
 	int getTileSize();
 	int getLevelHeight();
 };

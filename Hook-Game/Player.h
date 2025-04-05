@@ -14,14 +14,20 @@ private:
 	//Constante
 	const float speed = 200.f;   
 	const float jumpStrength = 400.f;
+	const float jumpStrengthX = 400.f;
 	const float gravity = 1000.f;
-	const float friction = 0.9f;
+	const float slidingSpeed = 150.f;
+	const float friction = 0.85f;
 	
-	const float widthOffset = -15.f;
-	const float heightOffset = -25.f;
+	const float widthOffset = -10.f;
+	const float heightOffset = -20.f;
 
-	const float offsetX = 10.f;
-	const float offsetY = 20.f;
+	const float offsetX = 5.f;
+	const float offsetY = 10.f;
+
+	const float bounceDistance = 10.f;
+	const float bouncingDistance = 10.f;
+
 
 	 //Variabile
 	sf::Texture playerTexture;
@@ -35,15 +41,21 @@ private:
 	int frameIndex;
 	float animationTimer;
 
+	float bounceCooldown = 0.f;
+
 	sf::Vector2f velocity;
 
 	float movementSpeed;
 	bool onGround;
+	bool isSliding;
+	bool jumpPressed;
 
 	 //Metode private
 	void updateBounds();
 	void drawHitbox(sf::RenderTarget& target);
 	void handleInputs(Level& level, float dt);
+	bool canBounceLeft(Level& level, sf::FloatRect playerBounds);
+	bool canBounceRight(Level& level, sf::FloatRect playerBounds);
 	
 public:
 	//Constructor / Destructor
@@ -55,9 +67,9 @@ public:
 	void move(sf:: Vector2f &velocity , Level& level, float dt);
 
 	/*bool isColliding(Level& level, sf::FloatRect &playerBounds);*/
-	bool isCollidingRinght(Level& level, sf::FloatRect& playerBounds, float velocityX, float dt);
+	bool isCollidingRight(Level& level, sf::FloatRect& playerBounds, float velocityX, float dt);
 	bool isCollidingLeft(Level& level, sf::FloatRect& playerBounds, float velocityX, float dt);
-	bool isCollidingUp(Level& level, sf::FloatRect& playerBounds);
+	bool isCollidingUp(Level& level, sf::FloatRect& playerBounds, float dt);
 
 	void updateOnGround(Level& level);
 

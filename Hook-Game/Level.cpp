@@ -116,6 +116,11 @@ int* Level::operator[](int index)
 	return levelMatrix[index];
 }
 
+sf::Vector2f Level::getTilePosition(int row, int column)
+{
+	return {(float)(row * this->tileSize), (float)(column*this->tileSize+8)};
+}
+
 int Level::getTileSize()
 {
 	return this->tileSize*2;
