@@ -215,6 +215,19 @@ void Player::update(float dt, Level& level)
 	{
 		this->bounceCooldown -= dt;
 	}
+	if (this->bounceCooldown <= 0.f)
+	{
+		this->bounceDirrection = 0;
+	}
+	//Actualizare cooldown air control
+	if (this->airControlRestoreCooldown > 0.f)
+	{
+		this->airControlRestoreCooldown -= dt;
+	}
+	if (this->airControlRestoreCooldown <= 0.f)
+	{
+		this->airControlRestoreCooldown = 0.f;
+	}
 
 	this->updateBounds();
 
@@ -236,17 +249,34 @@ void Player::drawHitbox(sf::RenderTarget& target)
 
 void Player::handleInputs(Level& level, float dt)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && this->bounceDirrection != 1)
 	{ 
-		velocity.x = -speed;
+		if (this->airControlRestoreCooldown <= 0.f)
+		{
+			velocity.x = -speed;
+		}
+		else
+		{
+			velocity.x = std::lerp(velocity.x, -speed, 0.4f);
+		}
 	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && this->bounceDirrection != -1)
 	{
-		velocity.x = speed;
+		if (this->airControlRestoreCooldown <= 0.f)
+		{
+			velocity.x = speed;
+		}
+		else
+		{
+			velocity.x = std::lerp(velocity.x, speed, 0.4f);
+		}
 	}
-	else
+	else if(bounceCooldown <= 0)
 	{
-		velocity.x *= friction;
+		if (onGround)
+			velocity.x *= friction;
+		else
+			velocity.x *= airFriction;
 	}
 
 	//Saritura
@@ -257,19 +287,26 @@ void Player::handleInputs(Level& level, float dt)
 			velocity.y = -jumpStrength;
 			jumpPressed = true;
 		}
-		else if (!onGround && !jumpPressed && this->bounceCooldown <= 0.f)
+		else if (!onGround && !jumpPressed && this->bounceCooldown <= 0.f)  //Wallbounce
 		{
 			sf::FloatRect playerBound = this->playerHitbox.getGlobalBounds();
-			this->bounceCooldown = 0.2f;
 			if (canBounceRight(level, playerBound))
 			{
 				velocity.x = -jumpStrengthX;
 				velocity.y = -jumpStrength;
+				this->bounceDirrection = -1;
+				this->bounceCooldown = bounceCooldownTime;
+				this->airControlRestoreCooldown = airControlRestoreCooldownTime;
+				jumpPressed = true;
 			}
 			else if (canBounceLeft(level, playerBound))
 			{
 				velocity.x = jumpStrengthX;
 				velocity.y = -jumpStrength;
+				this->bounceDirrection = 1;
+				this->bounceCooldown = bounceCooldownTime;
+				this->airControlRestoreCooldown = airControlRestoreCooldownTime;
+				jumpPressed = true;
 			}
 		}
 

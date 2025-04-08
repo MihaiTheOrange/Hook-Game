@@ -14,10 +14,11 @@ private:
 	//Constante
 	const float speed = 200.f;   
 	const float jumpStrength = 400.f;
-	const float jumpStrengthX = 400.f;
+	const float jumpStrengthX = 200.f;
 	const float gravity = 1000.f;
 	const float slidingSpeed = 150.f;
-	const float friction = 0.85f;
+	const float friction = 0.8f;
+	const float airFriction = 0.95f;
 	
 	const float widthOffset = -10.f;
 	const float heightOffset = -20.f;
@@ -26,7 +27,9 @@ private:
 	const float offsetY = 10.f;
 
 	const float bounceDistance = 10.f;
-	const float bouncingDistance = 10.f;
+
+	const float airControlRestoreCooldownTime = 0.4f;
+	const float bounceCooldownTime = 0.2f;
 
 
 	 //Variabile
@@ -42,6 +45,8 @@ private:
 	float animationTimer;
 
 	float bounceCooldown = 0.f;
+	float airControlRestoreCooldown = 0.f;
+	int bounceDirrection = 0;  //Pentru blocare input opus directiei bounce-ului
 
 	sf::Vector2f velocity;
 

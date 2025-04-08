@@ -5,9 +5,7 @@
 //TO DO: 
 // scapa de scalari
 // de organizat clasa Player(bafta)
-// hook
 // 
-// wall bounce - inceput - de terminat dreapta (blocheaza input pe directie-cooldown) de facut pentru stanga <======
 // muzica 
 
 int main()
