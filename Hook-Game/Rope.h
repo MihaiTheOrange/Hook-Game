@@ -30,7 +30,7 @@ public:
 	void setAnchor(const sf::Vector2f& anchor);
 	bool isAttached();
 
-	virtual void update(const sf::Vector2f& playerPos);
+	virtual void update(const sf::Vector2f& playerPos, float dt);
 	virtual void draw(sf::RenderTarget& target);
 };
 

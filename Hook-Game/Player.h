@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include "Level.h"
+#include "Rope.h"
+#include "Hook.h"
 
 class Player
 {
@@ -37,6 +39,8 @@ private:
 	sf::Sprite* playerSprite = nullptr; //alocare dinamica
 
 	sf::RectangleShape playerHitbox;
+	
+	Hook* hook = nullptr;
 	
 	float playerHeight;
 	float playerWidth;

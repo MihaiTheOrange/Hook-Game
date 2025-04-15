@@ -6,7 +6,7 @@
 #include <SFML/Audio.hpp>
 #include "Player.h"
 #include "Level.h"
-
+#include "Rope.h"
 
 /*
 	Clasa va fi engine-ul jocului
@@ -24,6 +24,7 @@ private:
 
 	Player player;
 	Level test_level;
+
 
 	//Metode private
 	void initVariables();

@@ -28,6 +28,7 @@ movementSpeed(5.f), velocity(0.f, 0.f), onGround(false), isSliding(false), jumpP
 	{
 		std::cout << "Player image load failed!" << std::endl;
 	}
+	this->hook = new Hook();
 
 }
 
@@ -199,6 +200,7 @@ void Player::update(float dt, Level& level)
 	this->updateOnGround(level);
 	this->apllyGravity(dt);
 	this->handleInputs(level, dt);
+	this->hook->update(this->playerHitbox.getPosition(), dt);
 
 
 	//Actualizare animatie
@@ -314,6 +316,27 @@ void Player::handleInputs(Level& level, float dt)
 	else
 		jumpPressed = false;
 
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
+	{
+		this->hook->setAnchor(this->playerHitbox.getPosition());
+		this->hook->shoot(this->playerHitbox.getPosition(), sf::Vector2f(1.f, 1.f), level);
+	}
+
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+	{
+		sf::Vector2f mousePos = sf::Vector2f(sf::Mouse::getPosition());
+		sf::Vector2f playerPos = this->playerHitbox.getPosition();
+		sf::Vector2f direction = mousePos - playerPos;
+		float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+		if (length > 0)
+			direction /= length;
+		std::cout << "Mouse pos: " << mousePos.x << " " << mousePos.y << std::endl;
+		std::cout << "Player pos: " << playerPos.x << " " << playerPos.y << std::endl;
+		std::cout << direction.x << " " << direction.y << std::endl;
+		std::cout << std::endl << std::endl << std::endl;
+		this->hook->shoot(playerPos, direction, level);
+	}
+
 	this->move(velocity, level, dt);
 
 }
@@ -354,4 +377,5 @@ void Player::render(sf::RenderTarget& target)
 {
 	this->drawHitbox(target);
 	target.draw(*this->playerSprite);
+	this->hook->draw(target);
 }
