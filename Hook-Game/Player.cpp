@@ -42,6 +42,16 @@ float Player::getPlayerHeight()
 	return this->playerHeight;
 }
 
+float Player::getPlayerWidth()
+{
+	return this->playerWidth;
+}
+
+sf::Vector2f Player::getPlayerDimensions()
+{
+	return this->playerHitbox.getSize();
+}
+
 void Player::setPosition(const sf::Vector2f& position)
 {
 	this->playerSprite->setPosition(position);
@@ -195,12 +205,12 @@ void Player::apllyGravity(float dt)
 
 
 
-void Player::update(float dt, Level& level)
+void Player::update(float dt, Level& level, sf::RenderWindow &window)
 {
 	this->updateOnGround(level);
 	this->apllyGravity(dt);
-	this->handleInputs(level, dt);
-	this->hook->update(this->playerHitbox.getPosition(), dt);
+	this->handleInputs(level, dt, window);
+	this->hook->update(this->playerHitbox.getPosition(), dt, this->getPlayerDimensions());
 
 
 	//Actualizare animatie
@@ -249,7 +259,7 @@ void Player::drawHitbox(sf::RenderTarget& target)
 	target.draw(this->playerHitbox);
 }
 
-void Player::handleInputs(Level& level, float dt)
+void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && this->bounceDirrection != 1)
 	{ 
@@ -319,22 +329,17 @@ void Player::handleInputs(Level& level, float dt)
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
 	{
 		this->hook->setAnchor(this->playerHitbox.getPosition());
-		this->hook->shoot(this->playerHitbox.getPosition(), sf::Vector2f(1.f, 1.f), level);
+		this->hook->shoot(this->playerHitbox.getPosition(), sf::Vector2f(1.f, 1.f), level, this->getPlayerDimensions());
 	}
 
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
 	{
-		sf::Vector2f mousePos = sf::Vector2f(sf::Mouse::getPosition());
+		sf::Vector2i mouseScreenPos = sf::Mouse::getPosition(window);
+		sf::Vector2f mouseWorldPos = window.mapPixelToCoords(mouseScreenPos);
+		
 		sf::Vector2f playerPos = this->playerHitbox.getPosition();
-		sf::Vector2f direction = mousePos - playerPos;
-		float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-		if (length > 0)
-			direction /= length;
-		std::cout << "Mouse pos: " << mousePos.x << " " << mousePos.y << std::endl;
-		std::cout << "Player pos: " << playerPos.x << " " << playerPos.y << std::endl;
-		std::cout << direction.x << " " << direction.y << std::endl;
-		std::cout << std::endl << std::endl << std::endl;
-		this->hook->shoot(playerPos, direction, level);
+		
+		this->hook->shoot(playerPos, mouseWorldPos, level, this->getPlayerDimensions());
 	}
 
 	this->move(velocity, level, dt);

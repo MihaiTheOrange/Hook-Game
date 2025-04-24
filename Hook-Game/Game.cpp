@@ -68,7 +68,7 @@ void Game::pollEvents()
 void Game::update(float dt)
 {
 	this->pollEvents();
-	player.update(dt, test_level);
+	player.update(dt, test_level, *window);
 }
 
 void Game::render()

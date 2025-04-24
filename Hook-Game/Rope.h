@@ -23,14 +23,16 @@ protected:
 	bool attached;  //daca atinge un tile suportat va fi true
 
 public:
-	
+	static sf::Vector2f normalize(const sf::Vector2f& v);
+
+
 	Rope();
 	virtual ~Rope() = default;
 
 	void setAnchor(const sf::Vector2f& anchor);
 	bool isAttached();
 
-	virtual void update(const sf::Vector2f& playerPos, float dt);
+	virtual void update(const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions);
 	virtual void draw(sf::RenderTarget& target);
 };
 

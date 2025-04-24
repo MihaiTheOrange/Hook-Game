@@ -1,14 +1,23 @@
 #include "Hook.h"
 
-Hook::Hook() : speed(400.f), flying(false)
+Hook::Hook() : speed(400.f), flying(false), hookTip({10.f, 2.f})
 {
-
+	this->hookTip.setFillColor(sf::Color(100, 100, 100));
 }
 
-void Hook::shoot(const sf::Vector2f& from, const sf::Vector2f& to, Level& level)
+void Hook::shoot(const sf::Vector2f& from, const sf::Vector2f& to, Level& level, const sf::Vector2f& playerDimensions)
 {
 	this->startPoint = from;
-	this->velocity = to * speed;
+	this->startPoint.x += playerDimensions.x;
+	this->startPoint.y += playerDimensions.y / 2.f; 
+
+
+	sf::Vector2f direction = normalize(to - from); 
+	
+	this->velocity = direction * speed;
+
+	this->anchorPoint = from + direction * 10.f; 
+
 	this->attached = false;
 	this->flying = true;
 }
@@ -29,14 +38,16 @@ void Hook::draw(sf::RenderTarget& target)
 	if (this->flying)
 	{
 		target.draw(this->ropeLine);
+		target.draw(this->hookTip);
 	}
 }
 
-void Hook::update(const sf::Vector2f& playerPos, float dt)
+void Hook::update(const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions)
 {
 	if (this->attached)
 	{
-		Rope::update(playerPos, dt);
+		Rope::update(playerPos, dt, playerDimensions);
+		this->hookTip.setPosition(this->anchorPoint);
 		return;
 	}
 
@@ -44,9 +55,13 @@ void Hook::update(const sf::Vector2f& playerPos, float dt)
 	{
 		//std::cout << ropeLine[0].position.x << std::endl;
 		this->anchorPoint += this->velocity * dt; // De schimbat cu dt
+
 		this->ropeLine[0].position = playerPos;
+		this->ropeLine[0].position.x += playerDimensions.x;
+		this->ropeLine[0].position.y += playerDimensions.y / 2.f;
 
 		this->ropeLine[1].position = this->anchorPoint;
+		this->hookTip.setPosition(this->anchorPoint);
 	}
 
 }

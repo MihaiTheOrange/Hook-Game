@@ -62,7 +62,7 @@ private:
 	 //Metode private
 	void updateBounds();
 	void drawHitbox(sf::RenderTarget& target);
-	void handleInputs(Level& level, float dt);
+	void handleInputs(Level& level, float dt, sf::RenderWindow& window);
 	bool canBounceLeft(Level& level, sf::FloatRect playerBounds);
 	bool canBounceRight(Level& level, sf::FloatRect playerBounds);
 	
@@ -72,6 +72,8 @@ public:
 	~Player();
 
 	float getPlayerHeight();
+	float getPlayerWidth();
+	sf::Vector2f getPlayerDimensions();
 	void setPosition(const sf::Vector2f& position);
 	void move(sf:: Vector2f &velocity , Level& level, float dt);
 
@@ -84,7 +86,7 @@ public:
 
 	void apllyGravity(float dt);
 
-	void update(float dt, Level& level);
+	void update(float dt, Level& level, sf::RenderWindow& window);
 
 	void render(sf::RenderTarget &target);
 };
