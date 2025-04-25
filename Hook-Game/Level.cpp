@@ -130,3 +130,10 @@ int Level::getLevelHeight() //*2 pentru ca tile-urile sunt scalate(SCAPA DE SCAL
 {
 	return this->rows * this->tileSize * 2;
 }
+
+sf::Vector2i Level::coordsToLevelPos(const sf::Vector2f& coords)
+{
+	int x = coords.x / this->getTileSize();
+	int y = coords.y / this->getTileSize();
+	return { x, y };
+}

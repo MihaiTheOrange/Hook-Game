@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include "Level.h"
+
 
 //Clasa responsabila pentru tot ce tine de carligul de catarare
 
@@ -25,6 +27,7 @@ protected:
 public:
 	static sf::Vector2f normalize(const sf::Vector2f& v);
 
+	sf::Vector2f getAnchorPoint() const;
 
 	Rope();
 	virtual ~Rope() = default;
@@ -32,7 +35,7 @@ public:
 	void setAnchor(const sf::Vector2f& anchor);
 	bool isAttached();
 
-	virtual void update(const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions);
+	virtual void update(Level& level, const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions);
 	virtual void draw(sf::RenderTarget& target);
 };
 

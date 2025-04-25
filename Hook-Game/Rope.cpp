@@ -11,6 +11,11 @@ sf::Vector2f Rope::normalize(const sf::Vector2f& v)
 
 }
 
+sf::Vector2f Rope::getAnchorPoint() const
+{
+	return this->anchorPoint;
+}
+
 Rope::Rope() :ropeLine(sf::PrimitiveType::Lines, 2), attached(false)
 {
 	ropeLine[0].color = sf::Color(139, 69, 19);
@@ -28,7 +33,7 @@ bool Rope::isAttached()
 	return attached;
 }
 
-void Rope::update(const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions)
+void Rope::update(Level& level, const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions)
 {
 	if (!this->attached)
 		return;
@@ -37,10 +42,10 @@ void Rope::update(const sf::Vector2f& playerPos, float dt, const sf::Vector2f& p
 	this->startPoint.y += playerDimensions.y / 2.f;
 
 	this->ropeLine[0].position = this->startPoint;
-	this->ropeLine[0].color = sf::Color::Red;
+	//this->ropeLine[0].color = sf::Color::Red;
 
 	this->ropeLine[1].position = this->anchorPoint;
-	this->ropeLine[1].color = sf::Color::Red;
+	//this->ropeLine[1].color = sf::Color::Red;
 }
 
 void Rope::draw(sf::RenderTarget& target)

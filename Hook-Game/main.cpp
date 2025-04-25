@@ -5,7 +5,7 @@
 //TO DO: 
 // scapa de scalari
 // de organizat clasa Player(bafta)
-// 
+// hook - oprire movement la max length, climbing, posibil swing(nu prea cred)
 // muzica 
 
 int main()

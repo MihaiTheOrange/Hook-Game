@@ -37,6 +37,11 @@ Player::~Player()
 	delete this->playerSprite;
 }
 
+void Player::setPlaterPosition(const sf::Vector2f& position)
+{
+	this->playerSprite->setPosition(position);
+}
+
 float Player::getPlayerHeight()
 {
 	return this->playerHeight;
@@ -210,8 +215,12 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	this->updateOnGround(level);
 	this->apllyGravity(dt);
 	this->handleInputs(level, dt, window);
-	this->hook->update(this->playerHitbox.getPosition(), dt, this->getPlayerDimensions());
 
+	//std::cout << "player " << this->playerHitbox.getPosition().x << " " << this->playerHitbox.getPosition().y << std::endl;
+	
+	this->hook->update(level, this->playerHitbox.getPosition(), dt, this->getPlayerDimensions());
+
+	this->maxLengthHookCheck();
 
 	//Actualizare animatie
 	this->animationTimer += dt;
@@ -244,6 +253,23 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	this->updateBounds();
 
 	
+}
+
+void Player::maxLengthHookCheck()
+{
+	if (this->hook->isAttached())
+	{
+		if (this->hook->longerThanMaxLength())
+		{
+			sf::Vector2f direction = this->hook->getDirection();
+
+			if (direction.x >= 0.5f)
+			{
+				this->velocity.x = speed * 2.f;
+			}
+
+		}
+	}
 }
 
 void Player::updateBounds()

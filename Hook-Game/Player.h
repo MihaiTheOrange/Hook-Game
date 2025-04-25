@@ -71,6 +71,8 @@ public:
 	Player();
 	~Player();
 
+	void setPlaterPosition(const sf::Vector2f& position);
+
 	float getPlayerHeight();
 	float getPlayerWidth();
 	sf::Vector2f getPlayerDimensions();
@@ -87,6 +89,7 @@ public:
 	void apllyGravity(float dt);
 
 	void update(float dt, Level& level, sf::RenderWindow& window);
+	void maxLengthHookCheck();
 
 	void render(sf::RenderTarget &target);
 };

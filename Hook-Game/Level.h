@@ -34,5 +34,7 @@ public:
 
 	int getTileSize();
 	int getLevelHeight();
+
+	sf::Vector2i coordsToLevelPos(const sf::Vector2f& coords);
 };
 
