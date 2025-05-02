@@ -25,6 +25,7 @@ public:
 	Level(const char* filename, const char* tilefile);
 	~Level();
 	
+	void update(float dt, sf::RenderWindow& window,const sf::Vector2f& playerPos);
 	void DrawLevel(sf::RenderWindow &window);
 	
 	void test_afis_nivel();
@@ -34,6 +35,7 @@ public:
 
 	int getTileSize();
 	int getLevelHeight();
+	int getLevelWidth();
 
 	sf::Vector2i coordsToLevelPos(const sf::Vector2f& coords);
 };

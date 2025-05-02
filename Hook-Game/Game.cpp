@@ -13,6 +13,11 @@ void Game::initWindow()
 	this->videoMode.bitsPerPixel = 32;
 	this->window = new sf::RenderWindow(this->videoMode, "Hook-Game");
 	this->window->setFramerateLimit(60);
+	
+	float xsize = static_cast<float>(window->getSize().x);
+	float ysize = static_cast<float>(window->getSize().y);
+
+	this->camera = new sf::View(sf::FloatRect({ 0.f, 0.f }, { xsize, ysize }));
 }
 
 void Game::initBackground()
@@ -48,6 +53,7 @@ Game::~Game()
 {
 	delete this->window;
 	delete this->backgroundSprite;
+	delete this->camera;
 }
 
 
@@ -69,6 +75,7 @@ void Game::update(float dt)
 {
 	this->pollEvents();
 	player.update(dt, test_level, *window);
+	this->test_level.update(dt, *window, player.getPlayerPosition());
 }
 
 void Game::render()

@@ -19,6 +19,8 @@ private:
 	sf::RenderWindow* window;
 	sf::VideoMode videoMode;
 
+	sf::View* camera;
+
 	sf::Texture backgroundTexture;
 	sf::Sprite *backgroundSprite;
 

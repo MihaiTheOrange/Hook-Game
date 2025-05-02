@@ -53,6 +53,7 @@ private:
 	int bounceDirrection = 0;  //Pentru blocare input opus directiei bounce-ului
 
 	sf::Vector2f velocity;
+	sf::Vector2f desiredMovement;
 
 	float movementSpeed;
 	bool onGround;
@@ -78,7 +79,10 @@ public:
 
 	float getPlayerHeight();
 	float getPlayerWidth();
+	
 	sf::Vector2f getPlayerDimensions();
+	sf::Vector2f getPlayerPosition() const;
+
 	void setPosition(const sf::Vector2f& position);
 	void move(sf:: Vector2f &velocity , Level& level, float dt);
 

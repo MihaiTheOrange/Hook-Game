@@ -9,6 +9,9 @@ class Hook : public Rope
 
 	const float climbSpeed = 100.f;
 	
+	float angle = 0.f;
+	float angularVelocity = 0.f;
+
 	float springConstant;
 	float damping;
 	
@@ -42,6 +45,8 @@ public:
 	void detach();
 	void shortenHook(float dt);
 	void lengthenHook(float dt);
+
+	//void swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity);
 
 	void draw(sf::RenderTarget& target);
 

@@ -1,6 +1,5 @@
 #include "Rope.h"
 
-#include "Hook.h"
 
 sf::Vector2f Rope::normalize(const sf::Vector2f& v)
 {
@@ -10,6 +9,11 @@ sf::Vector2f Rope::normalize(const sf::Vector2f& v)
 	else
 		return sf::Vector2f({ 0.f, 0.f }); // return zero vector if length is 0
 
+}
+
+float Rope::vectorLength(const sf::Vector2f& v)
+{
+	return std::sqrt(v.x * v.x + v.y * v.y);
 }
 
 sf::Vector2f Rope::getAnchorPoint() const
@@ -36,16 +40,26 @@ bool Rope::isAttached()
 
 //void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
 //{
-//	sf::Vector2f ropeVec = playerPosition - this->anchorPoint;
+//	sf::Vector2f ropeVec = this->startPoint - this->anchorPoint;
 //	sf::Vector2f ropeDir = normalize(ropeVec);
 //	sf::Vector2f tangentDir = { -ropeDir.y, ropeDir.x };
 //
-//	float torque = gravity * tangentDir.y;
 //
-//	playerVelocity += tangentDir * torque;
+//	float torque = 4.f;
+//	float maxPower = 100.f;
 //
+//	if (this->swingPower > maxPower)
+//		this->swingPower = maxPower;
+//	else
+//		this->swingPower += torque;
 //
-//
+//	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+//		playerVelocity += tangentDir * this->swingPower;
+//	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+//		playerVelocity += -tangentDir * this->swingPower;
+//	
+//	std::cout << "player vel" << playerVelocity.x << " " << playerVelocity.y << std::endl;
+//	std::cout << "tangent" << tangentDir.x << " " << tangentDir.y << std::endl;
 //
 //}
 
@@ -53,61 +67,38 @@ bool Rope::isAttached()
 // Cod furat 
 void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
 {
-	std::cout << "swing" << std::endl;
-    sf::Vector2f ropeVec = playerPosition - this->anchorPoint;
-    float length = std::sqrt(ropeVec.x * ropeVec.x + ropeVec.y * ropeVec.y);
+	sf::Vector2f ropeVec = playerPosition - this->anchorPoint;
+	sf::Vector2f ropeDir = normalize(ropeVec);
+	sf::Vector2f tangentDir = { -ropeDir.y, ropeDir.x }; // perpendicular to rope
 
-    if (length == 0.f) return;
+	float swingForce = 25.f; // some fixed value you can tweak
 
-    sf::Vector2f ropeDir = ropeVec / length;
+	float tensionFactor = 1.f - std::abs(ropeDir.x); 
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+	{
+		// Add force along the tangent (positive direction)
+		playerVelocity += tangentDir * swingForce;
+	}
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+	{
+		// Add force in opposite direction
+		playerVelocity -= tangentDir * swingForce;
+	}
 
-    // --- Springy rope correction ---
-    float overshoot = length - static_cast<Hook*>(this)->getHookLength();
-    sf::Vector2f correction = ropeDir * overshoot * static_cast<Hook*>(this)->getSpringConstant();
-    playerVelocity -= correction * dt;
+	// Optionally clamp velocity if needed to avoid huge spikes
+	float maxSpeed = 180.f;
+	if (vectorLength(playerVelocity) > maxSpeed)
+		playerVelocity = normalize(playerVelocity) * maxSpeed;
+	playerVelocity.y /= 3.f;
+	
+	playerVelocity.x *= 0.9f; // Apply some damping to the x velocity
 
-    // --- Damping (reduces bouncing over time) ---
-    playerVelocity *= static_cast<Hook*>(this)->getDamping();
-
-    // --- Gravity pull ---
-    playerVelocity.y += gravity * dt;
-
-    // --- Tangential (swing) force ---
-    
-    float buildRate = 8900.f;
-    float maxPower = 52200.f;
-
-    // Tangent to the rope direction
-    sf::Vector2f tangent(-ropeDir.y, ropeDir.x);
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-    {
-        swingPower += buildRate * dt;
-        swingPower = std::min(swingPower, maxPower);
-        playerVelocity += tangent * swingPower * dt;
-    }
-    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-    {
-        swingPower += buildRate * dt;
-        swingPower = std::min(swingPower, maxPower);
-        playerVelocity += -tangent * swingPower * dt;
-    }
-    else
-    {
-        swingPower *= 0.9f; // decay momentum when no input
-    }
-
-    // --- Gravity boost at bottom of swing ---
-    if (std::abs(ropeDir.x) < 0.1f) // nearly vertical rope
-    {
-        playerVelocity.y += 100.f * dt;
-    }
-
-	std::cout << "swingPower: " << swingPower << std::endl;
+	/*if ((ropeDir.x < 0.f && ropeDir.y < -0.1f) || (ropeDir.x > 0.f && ropeDir.y < 0.f))
+		playerVelocity = { 0,0 };*/
+	std::cout << "direction" << ropeDir.x << " " << ropeDir.y << std::endl;
+	std::cout << "velocity" << playerVelocity.x << " " << playerVelocity.y << std::endl;
 }
-
-
-
 
 
 void Rope::update(Level& level, const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions)

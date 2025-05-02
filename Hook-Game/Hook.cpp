@@ -94,6 +94,111 @@ void Hook::lengthenHook(float dt)
 		this->hookLength += this->climbSpeed * dt;
 }
 
+//void Hook::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
+//{
+//	sf::Vector2f ropeVec = startPoint - anchorPoint;
+//	float currentLength = vectorLength(ropeVec);
+//	sf::Vector2f dir = normalize(ropeVec);
+//
+//	float angle = std::atan2(dir.x, dir.y);
+//	this->angle = angle;
+//
+//	float g = gravity;
+//	float angularAcc = -(g / this->hookLength) * std::sin(this->angle);
+//
+//	this->angularVelocity += angularAcc * dt;
+//
+//	this->angularVelocity *= this->damping;
+//
+//	this->angle += this->angularVelocity * dt;
+//
+//	std::cout << "angle " << this->angle << std::endl;
+//	std::cout << "angular velocity " << this->angularVelocity << std::endl;
+//	
+//	sf::Vector2f offset = {
+//	this->hookLength * std::sin(this->angle),
+//	this->hookLength * std::cos(this->angle)
+//	};
+//
+//	//sf::Vector2f newPlayerPos = anchorPoint + offset;
+//
+//	
+//
+//	float inputTorque = 0.f;
+//	float torqueStrength = 50.f; // tweak as needed
+//
+//	if (isKeyPressed(sf::Keyboard::Key::A)) 
+//	{
+//		inputTorque = -torqueStrength;
+//	}
+//	else if (isKeyPressed(sf::Keyboard::Key::D)) 
+//	{
+//		inputTorque = torqueStrength;
+//	}
+//
+//	this->angularVelocity += inputTorque;
+//
+//	float maxAngularVelocity = 10.f;
+//	if (angularVelocity > maxAngularVelocity) angularVelocity = maxAngularVelocity;
+//	if (angularVelocity < -maxAngularVelocity) angularVelocity = -maxAngularVelocity;
+//
+//	float speed = angularVelocity * this->hookLength;
+//	sf::Vector2f tangent = { std::cos(this->angle), -std::sin(this->angle) };
+//	sf::Vector2f newVelocity = tangent * speed;
+//
+//	playerVelocity = newVelocity;
+//
+//}
+
+
+//void Hook::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
+//{
+//	// === Parameters ===
+//	float torqueStrength = 50.f;
+//	float damping = 0.99f;
+//	float maxAngularVelocity = 10.f;
+//	this->angle = 0.1f;
+//	// === Gravity-based angular acceleration ===
+//	float angularAcc = -(gravity / this->hookLength) * std::sin(this->angle);
+//	this->angularVelocity += angularAcc * dt;
+//
+//	// === Optional: Add torque from player input ===
+//	if (std::abs(this->angle) > 0.1f) {
+//		if (isKeyPressed(sf::Keyboard::Key::A))
+//			this->angularVelocity -= torqueStrength * dt;
+//		if (isKeyPressed(sf::Keyboard::Key::D))
+//			this->angularVelocity += torqueStrength * dt;
+//	}
+//
+//	// === Apply damping and clamp ===
+//	this->angularVelocity *= damping;
+//
+//	if (this->angularVelocity > maxAngularVelocity)
+//		this->angularVelocity = maxAngularVelocity;
+//	else if (this->angularVelocity < -maxAngularVelocity)
+//		this->angularVelocity = -maxAngularVelocity;
+//
+//	// === Update angle based on angular velocity ===
+//	this->angle += this->angularVelocity * dt;
+//
+//	// === Calculate position from angle (optional, useful for rope render) ===
+//	sf::Vector2f offset = {
+//		hookLength * std::sin(this->angle),
+//		hookLength * std::cos(this->angle)
+//	};
+//	sf::Vector2f newPlayerPosition = anchorPoint + offset;
+//
+//	// === Update player velocity (tangent direction) ===
+//	float tangentialSpeed = this->angularVelocity * hookLength;
+//	sf::Vector2f tangent = { std::cos(this->angle), -std::sin(this->angle) };
+//	playerVelocity = tangent * tangentialSpeed;
+//
+//	// Debug
+//	std::cout << "player velocity " << playerVelocity.x << " " << playerVelocity.y << std::endl;
+//}
+
+
+
 void Hook::draw(sf::RenderTarget& target)
 {
 	if (this->attached)

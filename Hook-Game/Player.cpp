@@ -3,7 +3,7 @@
 
 //VA ROG NU VA UITATI IN FISIERUL ASTA
 Player::Player() :playerHeight(72.f), playerWidth(36.f), frameIndex(0), animationTimer(0.f), 
-movementSpeed(5.f), velocity(0.f, 0.f), onGround(false), isSliding(false), jumpPressed(false),
+movementSpeed(5.f), velocity(0.f, 0.f), desiredMovement(0.f, 0.f), onGround(false), isSliding(false), jumpPressed(false),
 leftPressed(false), rightPressed(false), isSwinging(false)
 {
 	if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
@@ -56,6 +56,11 @@ float Player::getPlayerWidth()
 sf::Vector2f Player::getPlayerDimensions()
 {
 	return this->playerHitbox.getSize();
+}
+
+sf::Vector2f Player::getPlayerPosition() const
+{
+	return this->playerHitbox.getPosition();
 }
 
 void Player::setPosition(const sf::Vector2f& position)
@@ -223,6 +228,8 @@ void Player::apllyGravity(float dt)
 
 void Player::update(float dt, Level& level, sf::RenderWindow &window)
 {
+	//std::cout << "direction hook" << this->hook->getDirection().x << " " << this->hook->getDirection().y << " " << isSwinging << std::endl;
+
 	this->updateOnGround(level);
 	this->apllyGravity(dt);
 	this->handleInputs(level, dt, window);
@@ -272,18 +279,20 @@ void Player::maxLengthHookCheck()
 	{
 		if (this->hook->longerThanMaxLength())
 		{
-			sf::Vector2f direction = this->hook->getDirection();
-			float extraLength = this->hook->getExtraLength();
-			float springConstant = this->hook->getSpringConstant();
-			float damping = this->hook->getDamping();
+				sf::Vector2f direction = this->hook->getDirection();
+				float extraLength = this->hook->getExtraLength();
+				float springConstant = this->hook->getSpringConstant();
+				float damping = this->hook->getDamping();
 
-			sf::Vector2f springForce = direction * springConstant * extraLength;
+				sf::Vector2f springForce = direction * springConstant * extraLength;
 
 
+				//std::cout << "direction" << direction.x << " " << direction.y << std::endl;
 
-			this->velocity += springForce;
+				this->velocity += springForce;
 
-			this->velocity *= damping;
+				this->velocity *= damping;
+			
 		}
 	}
 }
@@ -304,66 +313,95 @@ void Player::drawHitbox(sf::RenderTarget& target)
 void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 {
 
-	//setez left si right pressed false
+	//VERIFICARI
 	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+	{
 		this->leftPressed = false;
+	}
 	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+	{
 		this->rightPressed = false;
+	}
 
-	if (!this->hook->isAttached() || (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && !sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)))
+	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && !sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+		this->desiredMovement = { 0.f, 0.f };
+
+	if (!this->hook->isAttached() || onGround || (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && !sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)))
 	{
 		this->isSwinging = false;
 	}
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && this->bounceDirrection != 1)
-	{ 
-		if (this->airControlRestoreCooldown <= 0.f && this->leftPressed == false)
+
+	//Movement normal
+	if (this->isSwinging)
+	{
+		this->hook->swing(dt, desiredMovement, this->playerHitbox.getPosition(), gravity);
+	}
+	else
+	{
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && this->bounceDirrection != 1)
 		{
-			if (!hook->isAttached())
+			if (this->airControlRestoreCooldown <= 0.f && this->leftPressed == false)
 			{
-				this->isSwinging = false;
-				velocity.x += -speed;
+				if (!hook->isAttached())
+				{
+					this->isSwinging = false;
+					//velocity.x += -speed;
+					desiredMovement.x = -speed;
+				}
+				else
+				{
+					//std::cout << "swinging" << std::endl;
+					if (!onGround)
+						this->isSwinging = true;
+					//this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+				}
 			}
 			else
 			{
-				this->isSwinging = true;
-				this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+				velocity.x = std::lerp(velocity.x, -speed, 0.4f);
+				desiredMovement = { 0.f, 0.f };
 			}
+			this->leftPressed = true;
 		}
-		else
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && this->bounceDirrection != -1)
 		{
-			velocity.x = std::lerp(velocity.x, -speed, 0.4f);
-		}
-		this->leftPressed = true;
-	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && this->bounceDirrection != -1)
-	{
-		if (this->airControlRestoreCooldown <= 0.f && this->rightPressed == false)
-		{
-			if (!hook->isAttached())
+			if (this->airControlRestoreCooldown <= 0.f && this->rightPressed == false)
 			{
-				this->isSwinging = false;
-				velocity.x += speed;
+				if (!hook->isAttached())
+				{
+					this->isSwinging = false;
+					//velocity.x += speed;
+					desiredMovement.x = speed;
+				}
+				else
+				{
+					if (!onGround)
+						this->isSwinging = true;
+					//std::cout << "swinging" << std::endl;
+						//this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+						//this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+				}
 			}
 			else
 			{
-				this->isSwinging = true;
-				this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+				velocity.x = std::lerp(velocity.x, speed, 0.4f);
+				desiredMovement = { 0.f, 0.f };
 			}
+			this->rightPressed = true;
 		}
-		else
+		else if (bounceCooldown <= 0)
 		{
-			velocity.x = std::lerp(velocity.x, speed, 0.4f);
+			if (onGround)
+				velocity.x *= friction;
+			else
+				velocity.x *= airFriction;
 		}
-		this->rightPressed = true;
 	}
-	else if(bounceCooldown <= 0)
-	{
-		if (onGround)
-			velocity.x *= friction;
-		else
-			velocity.x *= airFriction;
-	}
+
+	
+	
 
 	//Climbing
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && this->hook->isAttached())
@@ -427,8 +465,13 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 		this->hook->detach();
 	}
 
+	this->velocity += this->desiredMovement;
+	if (this->desiredMovement.x != 0.f)
+		this->velocity.x = 0.7f * this->velocity.x + 0.3f * this->desiredMovement.x;
+
 	this->move(velocity, level, dt);
 
+	//std::cout << "velocity" << this->velocity.x*dt << " " << this->velocity.y*dt << std::endl;
 }
 
 bool Player::canBounceLeft(Level& level, sf::FloatRect playerBounds)
@@ -437,6 +480,12 @@ bool Player::canBounceLeft(Level& level, sf::FloatRect playerBounds)
 	int leftTile = (playerBounds.position.x - bounceDistance) / level.getTileSize();
 	int topTile = playerBounds.position.y / level.getTileSize();
 	int bottomTile = (playerBounds.position.y + playerHeight) / level.getTileSize();
+
+	if (this->isSwinging && this->leftPressed)
+	{
+		return true;
+	}
+
 	for (int i = topTile; i <= bottomTile; i++)
 	{
 		if (level[i][leftTile] != 0)
@@ -452,6 +501,12 @@ bool Player::canBounceRight(Level& level, sf::FloatRect playerBounds)
 	int rightTile = (playerBounds.position.x + playerWidth + bounceDistance) / level.getTileSize();
 	int topTile = playerBounds.position.y / level.getTileSize();
 	int bottomTile = (playerBounds.position.y + playerHeight) / level.getTileSize();
+
+	if (this->isSwinging && this->rightPressed)
+	{
+		return true;
+	}
+
 	for (int i = topTile; i <= bottomTile; i++)
 	{
 		if (level[i][rightTile] != 0)

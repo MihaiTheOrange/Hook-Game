@@ -27,6 +27,7 @@ protected:
 	float swingPower = 0.f;
 public:
 	static sf::Vector2f normalize(const sf::Vector2f& v);
+	static float vectorLength(const sf::Vector2f& v);
 
 	sf::Vector2f getAnchorPoint() const;
 
@@ -36,7 +37,7 @@ public:
 	void setAnchor(const sf::Vector2f& anchor);
 	bool isAttached();
 
-	void swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity);
+	virtual void swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity);
 
 	virtual void update(Level& level, const sf::Vector2f& playerPos, float dt, const sf::Vector2f& playerDimensions);
 	virtual void draw(sf::RenderTarget& target);

@@ -64,6 +64,31 @@ void Level::LoadLevelFromFile(const char* filename, const char* tilefile)
 	}
 }
 
+void Level::update(float dt, sf::RenderWindow& window,const sf::Vector2f& playerPos)
+{
+	float halfViewWidth = view->getSize().x / 2.0f;
+	float halfViewHeight = view->getSize().y / 2.0f;
+
+	float mapWidth = static_cast<float>(getLevelWidth());
+	float mapHeight = static_cast<float>(getLevelHeight());
+
+	sf::Vector2f targetCenter = playerPos;
+
+	if (targetCenter.x < halfViewWidth)
+		targetCenter.x = halfViewWidth;
+
+	else if (targetCenter.x > mapWidth - halfViewWidth)
+		targetCenter.x = mapWidth - halfViewWidth;
+
+	if (targetCenter.y < halfViewHeight)
+		targetCenter.y = halfViewHeight;
+	else if (targetCenter.y > mapHeight - halfViewHeight)
+		targetCenter.y = mapHeight - halfViewHeight;
+
+	view->setCenter(targetCenter);
+	window.setView(*view);
+}
+
 void Level::DrawLevel(sf::RenderWindow& window)
 {
 	// parcurgem matricea
@@ -129,6 +154,11 @@ int Level::getTileSize()
 int Level::getLevelHeight() //*2 pentru ca tile-urile sunt scalate(SCAPA DE SCALARE)
 {
 	return this->rows * this->tileSize * 2;
+}
+
+int Level::getLevelWidth()
+{
+	return this->columns * this->tileSize * 2;
 }
 
 sf::Vector2i Level::coordsToLevelPos(const sf::Vector2f& coords)
