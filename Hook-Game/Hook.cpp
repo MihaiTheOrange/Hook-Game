@@ -1,6 +1,17 @@
 #include "Hook.h"
 
-Hook::Hook() : speed(500.f), flying(false), hookTip({10.f, 2.f}), hookLength(0.f)
+void Hook::initLenght()
+{
+	if (!this->initializedLength)
+	{
+		this->hookLength = this->hookRealLength;
+		this->initializedLength = true;	
+		//std::cout << "hook length " << this->hookLength << std::endl;
+	}
+}
+
+Hook::Hook() : speed(500.f), flying(false), hookTip({10.f, 2.f}), hookRealLength(0.f),
+springConstant(5.f), damping(0.8f), initializedLength(false), hookLength(0.f)
 {
 	this->hookTip.setFillColor(sf::Color(100, 100, 100));
 }
@@ -16,13 +27,40 @@ sf::Vector2f Hook::getDirection() const
 	return normalize(direction);
 }
 
+float Hook::getExtraLength() const
+{
+	if (this->hookRealLength > this->hookLength)
+		return this->hookRealLength - this->hookLength;
+	else
+		return this->hookRealLength - this->maxLenght;
+}
+
+float Hook::getSpringConstant() const
+{
+	return this->springConstant;
+}
+
+float Hook::getDamping() const
+{
+	return this->damping;
+}
+
+float Hook::getHookLength() const
+{
+	return this->hookLength;
+}
+
 bool Hook::longerThanMaxLength() const
 {
-	return this->hookLength > this->maxLenght;
+	//std::cout << "hook real length " << this->hookRealLength << std::endl;
+	//std::cout << "hook length " << this->hookLength << std::endl;
+	return (this->hookRealLength > this->maxLenght || this->hookRealLength > this->hookLength);
 }
 
 void Hook::shoot(const sf::Vector2f& from, const sf::Vector2f& to, Level& level, const sf::Vector2f& playerDimensions)
 {
+	this->initializedLength = false;
+
 	this->startPoint = from;
 	this->startPoint.x += playerDimensions.x;
 	this->startPoint.y += playerDimensions.y / 2.f; 
@@ -44,6 +82,18 @@ void Hook::detach()
 	this->flying = false;
 }
 
+void Hook::shortenHook(float dt)
+{
+	if (this->hookLength - this->climbSpeed * dt > 0.f)
+		this->hookLength -= this->climbSpeed * dt;
+}
+
+void Hook::lengthenHook(float dt)
+{
+	if (this->hookLength + this->climbSpeed * dt < this->maxLenght)
+		this->hookLength += this->climbSpeed * dt;
+}
+
 void Hook::draw(sf::RenderTarget& target)
 {
 	if (this->attached)
@@ -60,7 +110,7 @@ void Hook::draw(sf::RenderTarget& target)
 
 void Hook::updateLength()
 {
-	this->hookLength = std::hypot(this->ropeLine[0].position.x - this->ropeLine[1].position.x,
+	this->hookRealLength = std::hypot(this->ropeLine[0].position.x - this->ropeLine[1].position.x,
 		this->ropeLine[0].position.y - this->ropeLine[1].position.y);
 }
 
@@ -68,6 +118,7 @@ void Hook::update(Level &level, const sf::Vector2f& playerPos, float dt, const s
 {
 	if (this->attached)
 	{
+		this->initLenght();
 		Rope::update(level, playerPos, dt, playerDimensions);
 		this->hookTip.setPosition(this->anchorPoint);
 		this->updateLength();
@@ -85,12 +136,12 @@ void Hook::update(Level &level, const sf::Vector2f& playerPos, float dt, const s
 
 		this->ropeLine[1].position = this->anchorPoint;
 
-	/*	this->hookLength = std::hypot(this->ropeLine[0].position.x - this->ropeLine[1].position.x,
+	/*	this->hookRealLength = std::hypot(this->ropeLine[0].position.x - this->ropeLine[1].position.x,
 			this->ropeLine[0].position.y - this->ropeLine[1].position.y);*/
 		this->updateLength();
 
-		//std::cout << this->hookLength << std::endl;
-		if (this->hookLength > this->maxLenght)
+		//std::cout << this->hookRealLength << std::endl;
+		if (this->hookRealLength > this->maxLenght)
 		{
 			this->flying = false;
 			this->attached = false;

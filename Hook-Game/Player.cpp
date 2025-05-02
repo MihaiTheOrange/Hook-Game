@@ -3,7 +3,8 @@
 
 //VA ROG NU VA UITATI IN FISIERUL ASTA
 Player::Player() :playerHeight(72.f), playerWidth(36.f), frameIndex(0), animationTimer(0.f), 
-movementSpeed(5.f), velocity(0.f, 0.f), onGround(false), isSliding(false), jumpPressed(false)
+movementSpeed(5.f), velocity(0.f, 0.f), onGround(false), isSliding(false), jumpPressed(false),
+leftPressed(false), rightPressed(false), isSwinging(false)
 {
 	if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
 	{
@@ -126,6 +127,16 @@ void Player::move(sf::Vector2f &velocity, Level &level, float dt)  //Nu ma intre
 
 
 	this->playerSprite->move({ velocity.x * dt, velocity.y * dt });
+
+	/*if (this->isSwinging)
+	{
+		if (this->hook->longerThanMaxLength())
+		{
+			std::cout << "hook length I got HERE" << this->hook->getHookLength() << std::endl;
+			this->playerSprite->setPosition(this->hook->getAnchorPoint() - this->hook->getDirection() * this->hook->getHookLength());
+		}
+	}*/
+
 }
 
 
@@ -262,12 +273,17 @@ void Player::maxLengthHookCheck()
 		if (this->hook->longerThanMaxLength())
 		{
 			sf::Vector2f direction = this->hook->getDirection();
+			float extraLength = this->hook->getExtraLength();
+			float springConstant = this->hook->getSpringConstant();
+			float damping = this->hook->getDamping();
 
-			if (direction.x >= 0.5f)
-			{
-				this->velocity.x = speed * 2.f;
-			}
+			sf::Vector2f springForce = direction * springConstant * extraLength;
 
+
+
+			this->velocity += springForce;
+
+			this->velocity *= damping;
 		}
 	}
 }
@@ -287,27 +303,59 @@ void Player::drawHitbox(sf::RenderTarget& target)
 
 void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 {
+
+	//setez left si right pressed false
+	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+		this->leftPressed = false;
+	if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+		this->rightPressed = false;
+
+	if (!this->hook->isAttached() || (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && !sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)))
+	{
+		this->isSwinging = false;
+	}
+
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && this->bounceDirrection != 1)
 	{ 
-		if (this->airControlRestoreCooldown <= 0.f)
+		if (this->airControlRestoreCooldown <= 0.f && this->leftPressed == false)
 		{
-			velocity.x = -speed;
+			if (!hook->isAttached())
+			{
+				this->isSwinging = false;
+				velocity.x += -speed;
+			}
+			else
+			{
+				this->isSwinging = true;
+				this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+			}
 		}
 		else
 		{
 			velocity.x = std::lerp(velocity.x, -speed, 0.4f);
 		}
+		this->leftPressed = true;
 	}
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && this->bounceDirrection != -1)
 	{
-		if (this->airControlRestoreCooldown <= 0.f)
+		if (this->airControlRestoreCooldown <= 0.f && this->rightPressed == false)
 		{
-			velocity.x = speed;
+			if (!hook->isAttached())
+			{
+				this->isSwinging = false;
+				velocity.x += speed;
+			}
+			else
+			{
+				this->isSwinging = true;
+				this->hook->swing(dt, velocity, this->playerHitbox.getPosition(), gravity);
+			}
 		}
 		else
 		{
 			velocity.x = std::lerp(velocity.x, speed, 0.4f);
 		}
+		this->rightPressed = true;
 	}
 	else if(bounceCooldown <= 0)
 	{
@@ -315,6 +363,16 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 			velocity.x *= friction;
 		else
 			velocity.x *= airFriction;
+	}
+
+	//Climbing
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && this->hook->isAttached())
+	{
+		hook->shortenHook(dt);
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) && this->hook->isAttached())
+	{
+		hook->lengthenHook(dt);
 	}
 
 	//Saritura
@@ -330,6 +388,7 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 			sf::FloatRect playerBound = this->playerHitbox.getGlobalBounds();
 			if (canBounceRight(level, playerBound))
 			{
+				this->hook->detach();
 				velocity.x = -jumpStrengthX;
 				velocity.y = -jumpStrength;
 				this->bounceDirrection = -1;
@@ -339,6 +398,7 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 			}
 			else if (canBounceLeft(level, playerBound))
 			{
+				this->hook->detach();
 				velocity.x = jumpStrengthX;
 				velocity.y = -jumpStrength;
 				this->bounceDirrection = 1;
@@ -352,11 +412,6 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 	else
 		jumpPressed = false;
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
-	{
-		this->hook->setAnchor(this->playerHitbox.getPosition());
-		this->hook->shoot(this->playerHitbox.getPosition(), sf::Vector2f(1.f, 1.f), level, this->getPlayerDimensions());
-	}
 
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
 	{
@@ -366,6 +421,10 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 		sf::Vector2f playerPos = this->playerHitbox.getPosition();
 		
 		this->hook->shoot(playerPos, mouseWorldPos, level, this->getPlayerDimensions());
+	}
+	else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && this->hook->isAttached())
+	{
+		this->hook->detach();
 	}
 
 	this->move(velocity, level, dt);

@@ -58,6 +58,9 @@ private:
 	bool onGround;
 	bool isSliding;
 	bool jumpPressed;
+	bool leftPressed;
+	bool rightPressed;
+	bool isSwinging;
 
 	 //Metode private
 	void updateBounds();

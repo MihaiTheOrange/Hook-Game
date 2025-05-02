@@ -1,7 +1,6 @@
 #include "Game.h"
 #include <SFML/Graphics.hpp>
 
-
 //TO DO: 
 // scapa de scalari
 // de organizat clasa Player(bafta)
