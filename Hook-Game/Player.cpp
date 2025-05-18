@@ -1,17 +1,24 @@
 #include "Player.h"
 
 
-//VA ROG NU VA UITATI IN FISIERUL ASTA
-Player::Player() :playerHeight(72.f), playerWidth(36.f), frameIndex(0), animationTimer(0.f), 
-movementSpeed(5.f), velocity(0.f, 0.f), desiredMovement(0.f, 0.f), onGround(false), isSliding(false), jumpPressed(false),
-leftPressed(false), rightPressed(false), isSwinging(false)
+//VA ROG NU VA UITATI IN FISIERUL ASTA - UPDATE: Nu mai e cel mai rau fisier :) 
+Player::Player() :originalHeight(48.f), originalWidth(24.f), frameIndex(0), animationTimer(0.f), 
+movementSpeed(5.f), velocity(0.f, 0.f), desiredMovement(0.f, 0.f), onGround(false), isSliding(false), 
+jumpPressed(false), leftPressed(false), rightPressed(false), isSwinging(false), playerHeight(0.f), 
+playerWidth(0.f), scalingFactor({ 0.8f, 0.8f }), currentAnimation(AnimationStates::IDLE), numberOfFrames(0)
 {
 	if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
 	{
 		std::cout << "Player Image loaded" << std::endl;
 		this->playerSprite = new sf::Sprite(playerTexture);
 		this->playerSprite->setTextureRect(sf::IntRect({this->frameIndex*48, 0}, {48, 48}));
-		this->playerSprite->scale({ 1.5, 1.5 });
+
+		this->playerHeight = this->originalHeight * this->scalingFactor.y;
+		this->playerWidth = this->originalWidth * this->scalingFactor.x;
+
+
+		this->playerSprite->scale(scalingFactor);
+		this->playerSprite->setOrigin({ this->playerWidth / 2.f, this->playerHeight / 2.f });
 
 		
 		this->playerHitbox.setSize({ playerWidth, playerHeight });
@@ -23,6 +30,9 @@ leftPressed(false), rightPressed(false), isSwinging(false)
 		this->playerWidth = this->playerWidth + widthOffset;
 
 
+		this->loadAnimations();
+		this->setPlayerAnimation(AnimationStates::RUNNING);
+		this->numberOfFrames = this->Animations[this->currentAnimation].frames.size();
 		this->frameIndex++;
 	}
 	else
@@ -36,6 +46,27 @@ leftPressed(false), rightPressed(false), isSwinging(false)
 Player::~Player()
 {
 	delete this->playerSprite;
+}
+
+void Player::setPlayerAnimation(AnimationStates state)
+{
+	if (this->currentAnimation != state)
+	{
+		this->currentAnimation = state;
+		this->playerSprite->setTextureRect(this->Animations[state].frames[0]);
+		this->playerSprite->setTexture(this->Animations[state].texture);
+		this->frameIndex = 0;
+		this->animationTimer = 0.f;
+		//this->playerSprite->setOrigin({ playerWidth / 2.f, playerHeight / 2.f });
+		this->playerSprite->setScale(scalingFactor);
+		this->numberOfFrames = this->Animations[state].frames.size();
+		std::cout << "number of frames " << this->numberOfFrames << std::endl;
+
+	}
+	else
+	{
+		this->playerSprite->setTextureRect(this->Animations[state].frames[this->frameIndex]);
+	}
 }
 
 void Player::setPlaterPosition(const sf::Vector2f& position)
@@ -199,7 +230,7 @@ void Player::updateOnGround(Level& level)
 		return;
 	}
 	sf::FloatRect playerBound = this->playerHitbox.getGlobalBounds();
-	float groundCheckOffset = 5.f;
+	float groundCheckOffset = 1.f;
 	int leftTile = playerBound.position.x / level.getTileSize();
 	int rightTile = (playerBound.position.x + playerWidth) / level.getTileSize();
 	int bottomTile = (playerBound.position.y + playerHeight + groundCheckOffset) / level.getTileSize();
@@ -234,6 +265,15 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	this->apllyGravity(dt);
 	this->handleInputs(level, dt, window);
 
+	if (leftPressed)
+	{
+		this->playerSprite->setScale({-scalingFactor.x, scalingFactor.y});
+	}
+	else if (rightPressed)
+	{
+		this->playerSprite->setScale({ scalingFactor.x, scalingFactor.y });
+	}
+
 	//std::cout << "player " << this->playerHitbox.getPosition().x << " " << this->playerHitbox.getPosition().y << std::endl;
 	
 	this->hook->update(level, this->playerHitbox.getPosition(), dt, this->getPlayerDimensions());
@@ -245,7 +285,7 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	if (animationTimer > 0.2f)
 	{
 		this->playerSprite->setTextureRect(sf::IntRect({ this->frameIndex * 48, 0 }, { 48, 48 }));
-		this->frameIndex = (this->frameIndex+1) % 4;
+		this->frameIndex = (this->frameIndex+1) % this->numberOfFrames;
 		this->animationTimer = 0.f;
 	}
 
@@ -515,6 +555,38 @@ bool Player::canBounceRight(Level& level, sf::FloatRect playerBounds)
 		}
 	}
 	return false;
+}
+
+void Player::loadAnimations()
+{
+	Animation idle;
+	idle.texture.loadFromFile("Assets/Player/Textures/idle_sheet.png");
+	idle.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));	// setam pozitia fiecarui cadru in textura
+	idle.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+	idle.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+	idle.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	Animations[AnimationStates::IDLE] = idle;
+
+	Animation run;
+	run.texture.loadFromFile("Assets/Player/Textures/run_sheet.png");
+	run.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+	run.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+	run.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+	run.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	run.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+	run.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+	Animations[AnimationStates::RUNNING] = run;
+
+	Animation jump;
+	jump.texture.loadFromFile("Assets/Player/Textures/jump_sheet.png");
+	jump.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+	jump.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+	jump.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+	jump.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	Animations[AnimationStates::JUMPING] = jump;
+
+	this->currentAnimation = AnimationStates::IDLE;
+
 }
 
 

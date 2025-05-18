@@ -2,10 +2,9 @@
 #include <SFML/Graphics.hpp>
 
 //TO DO: 
-// scapa de scalari
 // de organizat clasa Player(bafta)
-// hook - oprire movement la max length, climbing, posibil swing(nu prea cred)
-// muzica 
+// muzica - probabil nu apuc
+// timer pentru animatii de terminat!
 
 int main()
 {

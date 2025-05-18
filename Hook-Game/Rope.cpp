@@ -71,7 +71,7 @@ void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& pla
 	sf::Vector2f ropeDir = normalize(ropeVec);
 	sf::Vector2f tangentDir = { -ropeDir.y, ropeDir.x }; // perpendicular to rope
 
-	float swingForce = 25.f; // some fixed value you can tweak
+	float swingForce = 20.f; // some fixed value you can tweak
 
 	float tensionFactor = 1.f - std::abs(ropeDir.x); 
 	
@@ -96,8 +96,6 @@ void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& pla
 
 	/*if ((ropeDir.x < 0.f && ropeDir.y < -0.1f) || (ropeDir.x > 0.f && ropeDir.y < 0.f))
 		playerVelocity = { 0,0 };*/
-	std::cout << "direction" << ropeDir.x << " " << ropeDir.y << std::endl;
-	std::cout << "velocity" << playerVelocity.x << " " << playerVelocity.y << std::endl;
 }
 
 

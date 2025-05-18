@@ -15,9 +15,9 @@ class Player
 private:
 	//Constante
 	const float speed = 200.f;   
-	const float jumpStrength = 400.f;
-	const float jumpStrengthX = 200.f;
-	const float gravity = 1000.f;
+	const float jumpStrength = 300.f;
+	const float jumpStrengthX = 150.f;
+	const float gravity = 900.f;
 	const float slidingSpeed = 150.f;
 	const float friction = 0.8f;
 	const float airFriction = 0.95f;
@@ -25,13 +25,32 @@ private:
 	const float widthOffset = -10.f;
 	const float heightOffset = -20.f;
 
-	const float offsetX = 5.f;
-	const float offsetY = 10.f;
+	const float offsetX = -4.f;
+	const float offsetY = 0.f;
 
 	const float bounceDistance = 10.f;
 
 	const float airControlRestoreCooldownTime = 0.4f;
 	const float bounceCooldownTime = 0.2f;
+
+
+	enum class AnimationStates
+	{
+		IDLE,
+		RUNNING,
+		JUMPING
+	} currentAnimation;
+
+	struct Animation
+	{
+		sf::Texture texture;
+		std::vector<sf::IntRect> frames;
+		float animationSpeed; // Timpul unui cadru in secunde
+	};
+
+	std::unordered_map<AnimationStates, Animation> Animations;
+
+	int numberOfFrames;
 
 
 	 //Variabile
@@ -42,8 +61,14 @@ private:
 	
 	Hook* hook = nullptr;
 	
+
+	float originalHeight;
+	float originalWidth;
+
 	float playerHeight;
 	float playerWidth;
+
+	sf::Vector2f scalingFactor; //scalarea sprite-urilor
 
 	int frameIndex;
 	float animationTimer;
@@ -69,11 +94,15 @@ private:
 	void handleInputs(Level& level, float dt, sf::RenderWindow& window);
 	bool canBounceLeft(Level& level, sf::FloatRect playerBounds);
 	bool canBounceRight(Level& level, sf::FloatRect playerBounds);
+
+	void loadAnimations();
 	
 public:
 	//Constructor / Destructor
 	Player();
 	~Player();
+
+	void setPlayerAnimation(AnimationStates state);
 
 	void setPlaterPosition(const sf::Vector2f& position);
 

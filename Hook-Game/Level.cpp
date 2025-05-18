@@ -1,8 +1,20 @@
 #include "Level.h"
 
-Level::Level(const char* filename, const char* tilefile) :tile(nullptr)
+Level::Level(const char* filename, const char* tilefile, const char* parallaxFile) : tile(nullptr)
 {
 	LoadLevelFromFile(filename, tilefile);
+	if (!parallaxTexture.loadFromFile(parallaxFile))
+	{
+		std::cout << "Eroare la incarcarea texturii" << std::endl;
+	}
+	else
+	{
+		parallaxTexture.setRepeated(true);
+
+		parallaxSprite = new sf::Sprite(parallaxTexture);
+		parallaxSprite->setTextureRect(sf::IntRect({ 0, 0 }, { LAYER_WIDTH, 330 })); // setam dimensiunea sprite-ului
+
+	}
 }
 
 Level::~Level()
@@ -14,6 +26,8 @@ Level::~Level()
 	delete[] levelMatrix;
 	delete tile;
 	delete view;
+	delete parallaxSprite;
+
 
 }
 
@@ -25,10 +39,41 @@ void Level::InitView(sf::RenderWindow& window)
 
 	view = new sf::View(sf::FloatRect({ 0.f, 0.f }, { xsize, ysize }));
 	
-	float mapWidth = columns * tileSize * 2; //*2 pentru ca tile-urile sunt scalate
-	float mapHeight = rows * tileSize*2;
+	float mapWidth = columns * tileSize ; //*2 pentru ca tile-urile sunt scalate
+	float mapHeight = rows * tileSize;
 	view->setCenter({ xsize / 2 , mapHeight - ysize / 2 }); //x-ul neschimbat y-ul mutat in jos
 
+	//Filtru de fundal
+	this->backgroundFilter.setSize(sf::Vector2f(window.getSize()));
+	this->backgroundFilter.setFillColor(sf::Color(20, 40, 40, 50));
+
+	//background parallax
+	int posY = 0;
+	for (int i = 0; i < NUM_LAYERS; ++i) 
+	{
+		float layerHeight = layerHeights[i];
+
+		int numOfLayers = this->getLevelWidth()/LAYER_WIDTH;
+
+		sf::RectangleShape layer(sf::Vector2f(static_cast<float>(LAYER_WIDTH-30)* numOfLayers*4, layerHeight));
+		layer.setTexture(&parallaxTexture);
+
+		if(i > 0)
+			posY += (int)layerHeights[i - 1];
+		std::cout << i << " " << posY << std::endl;
+
+		//if (i == NUM_LAYERS-1)
+		//	posY -= layerHeights[i];
+
+		layer.setTextureRect(sf::IntRect({ 0, posY }, { LAYER_WIDTH*numOfLayers*4, (int)layerHeight }));
+
+		backgroundLayers.push_back(layer);
+
+		//std::cout << backgroundLayers[i].getSize().x << " " << backgroundLayers[i].getSize().y << std::endl;
+	}
+	
+
+	view->zoom(0.5f);
 	window.setView(*view);
 }
 
@@ -86,16 +131,74 @@ void Level::update(float dt, sf::RenderWindow& window,const sf::Vector2f& player
 		targetCenter.y = mapHeight - halfViewHeight;
 
 	view->setCenter(targetCenter);
+	
+
 	window.setView(*view);
+
+
+}
+
+void Level::DrawBackground(sf::RenderWindow& window)
+{
+	//Background parallax
+	sf::Vector2f cameraCenter = view->getCenter();
+	sf::Vector2f viewSize = view->getSize();
+	float mapHeight = getLevelHeight();
+
+
+	float curHeight = this->heightSum;
+
+	for (size_t i = 0; i < backgroundLayers.size(); ++i)
+	{
+		float factor = parallaxFactors[i];
+		float layerHeight = layerHeights[i];
+		float layerWidth = backgroundLayers[i].getSize().x;
+
+		//float yPosition = mapHeight - curHeight*3/4 - 8*tileSize;
+
+		float cameraButtomY = cameraCenter.y + viewSize.y / 2;
+		float yPosition = cameraButtomY - curHeight * 3/4 - 3.5 * tileSize;
+		//float yPosition = cameraButtomY - curHeight * 3/4 - 8 * tileSize;
+
+		curHeight -= layerHeight;
+
+		
+
+		//float yPosition = mapHeight - (NUM_LAYERS - i) * layerHeight - 10 * tileSize;
+
+		// Scroll offset based on parallax
+		float xOffset = cameraCenter.x * (1 - factor) - layerWidth / 4;
+
+	
+
+		//float startX = xOffset - std::fmod(xOffset, layerWidth) - layerWidth*10;
+
+		// Calculeaza cate tile-uri sunt necesare pentru a umple ecranul
+		int tilesNeeded = static_cast<int>(std::ceil(viewSize.x / layerWidth)) + 2;
+
+		for (int j = 0; j < tilesNeeded; ++j)
+		{
+			sf::RectangleShape& layer = backgroundLayers[i];
+			layer.setPosition({ xOffset, yPosition });
+			window.draw(layer);
+		}
+		window.draw(backgroundFilter);
+		//view->zoom(2.f);
+	}
+
 }
 
 void Level::DrawLevel(sf::RenderWindow& window)
 {
+
+	// Desenam background-ul
 	// parcurgem matricea
 	// luam id-ul tile-ului
 	// determinam pozitia tile-ului in tileset
 	// setam textura pentru sprite-ul tile-ului si il desenam la pozitia corecta 
 
+
+	this->DrawBackground(window);
 
 	for (int i = 0; i < rows; i++)
 	{
@@ -109,15 +212,16 @@ void Level::DrawLevel(sf::RenderWindow& window)
 			int tileY = tileIndex / (tileset.getSize().x / tileSize);
 			
 			this->tile->setTextureRect(sf::IntRect({ tileX * tileSize, tileY * tileSize }, { tileSize, tileSize }));
-			this->tile->setScale({ 2,2 });
+			this->tile->setScale(this->scalingFactor);
 
 			float posX = (float)(j * tileSize);
 			float posY = (float)(i * tileSize)+8;
 			//std::cout << j << " " << i << std::endl;
-			this->tile->setPosition({posX*2, posY*2});
+			this->tile->setPosition({posX, posY});   // scaling scos de pus *2 la ambele reminder
 			window.draw(*tile);
 		}
 	}
+
 
 }
 
@@ -148,17 +252,17 @@ sf::Vector2f Level::getTilePosition(int row, int column)
 
 int Level::getTileSize()
 {
-	return this->tileSize*2;
+	return this->tileSize;  //*2 scos de pus reminder
 }
 
 int Level::getLevelHeight() //*2 pentru ca tile-urile sunt scalate(SCAPA DE SCALARE)
 {
-	return this->rows * this->tileSize * 2;
+	return this->rows * this->tileSize;  //*2 scos de pus reminder
 }
 
 int Level::getLevelWidth()
 {
-	return this->columns * this->tileSize * 2;
+	return this->columns * this->tileSize; //*2 scos de pus reminder
 }
 
 sf::Vector2i Level::coordsToLevelPos(const sf::Vector2f& coords)

@@ -5,7 +5,7 @@
 
 class Hook : public Rope
 {
-	const float maxLenght = 200.f;
+	const float maxLenght = 300.f;
 
 	const float climbSpeed = 100.f;
 	

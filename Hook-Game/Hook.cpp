@@ -10,8 +10,8 @@ void Hook::initLenght()
 	}
 }
 
-Hook::Hook() : speed(500.f), flying(false), hookTip({10.f, 2.f}), hookRealLength(0.f),
-springConstant(5.f), damping(0.8f), initializedLength(false), hookLength(0.f)
+Hook::Hook() : speed(400.f), flying(false), hookTip({10.f, 2.f}), hookRealLength(0.f),
+springConstant(2.5f), damping(0.8f), initializedLength(false), hookLength(0.f)
 {
 	this->hookTip.setFillColor(sf::Color(100, 100, 100));
 }

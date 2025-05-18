@@ -18,6 +18,8 @@ void Game::initWindow()
 	float ysize = static_cast<float>(window->getSize().y);
 
 	this->camera = new sf::View(sf::FloatRect({ 0.f, 0.f }, { xsize, ysize }));
+
+
 }
 
 void Game::initBackground()
@@ -40,13 +42,14 @@ void Game::initBackground()
 
 
 // Constructor / Desctructor
-Game::Game() : test_level("Assets/Levels/Test_level/test.txt", "Assets/Levels/Test_level/Snow.png")
+Game::Game() : test_level("Assets/Levels/Test_level/test.txt", "Assets/Levels/Test_level/Snow.png", "Assets/Backgrounds/parallax2.png")
 {
 	this->initVariables();
 	this->initWindow();
 	this->test_level.InitView(*window);
 	//this->initBackground();
-	this->player.setPosition({0.f, window->getSize().y - player.getPlayerHeight()});
+	//this->player.setPosition({10.f, window->getSize().y  - player.getPlayerHeight()});
+	this->player.setPosition({10.f, 10.f});
 }
 
 Game::~Game()
@@ -86,10 +89,14 @@ void Game::render()
 		- Arata cadrul nou in fereastra
 	*/
 
-	window->clear();
+	this->window->clear(sf::Color(20, 24, 45));
 	//window->draw(*this->backgroundSprite);
 	this->test_level.DrawLevel(*window);
+
+	
 	this->player.render(*window);
+
+
 	window->display();
 }
 

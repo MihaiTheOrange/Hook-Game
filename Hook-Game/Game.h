@@ -28,6 +28,8 @@ private:
 	Level test_level;
 
 
+
+
 	//Metode private
 	void initVariables();
 	void initWindow();
