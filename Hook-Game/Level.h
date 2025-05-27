@@ -16,6 +16,7 @@ private:
 	const int LAYER_WIDTH = 330;
 	const int LAYER_HEIGHT = 82;
 	const int NUM_LAYERS = 4;
+	const int WIN_TILE = 97;
 
 	const float heightSum = 276.0f; 
 
@@ -32,7 +33,10 @@ private:
 	26.0f,  // Snow
 	};
 
-	int** levelMatrix; //alocare dinamica
+	int** levelMatrix = nullptr; //alocare dinamica
+	int** backgroundLayerMatrix = nullptr; //alocare dinamica
+	bool hasBackgroundLayer = false;
+
 	int rows;
 	int columns;
 	int tileSize;
@@ -46,10 +50,13 @@ private:
 
 	sf::RectangleShape backgroundFilter;
 
+	sf::Vector2u spawnPoint;
+	sf::Vector2f winPosition;
+
 	void LoadLevelFromFile(const char* filename, const char* tilefile);
 public:
-	void InitView(sf::RenderWindow& window);
-	Level(const char* filename, const char* tilefile, const char* parallaxFile);
+	sf::View* InitView(sf::RenderWindow& window);
+	Level(const char* filename, const char* tilefile, const char* parallaxFile, bool hasBackground, sf::Vector2u spawnPoint);
 	~Level();
 	
 	void update(float dt, sf::RenderWindow& window,const sf::Vector2f& playerPos);
@@ -61,11 +68,16 @@ public:
 
 	int* operator[](int index);
 	sf::Vector2f getTilePosition(int row, int column);
+	sf::Vector2f getSpawnPosition();
 
 	int getTileSize();
 	int getLevelHeight();
 	int getLevelWidth();
+	sf::Vector2f getViewCenter() const;
+	sf::Vector2f getWinPosition() const;
 
 	sf::Vector2i coordsToLevelPos(const sf::Vector2f& coords);
+
+	bool checkWinCondition(const sf::Vector2f& playerPos) const;
 };
 

@@ -17,7 +17,6 @@ void Game::initWindow()
 	float xsize = static_cast<float>(window->getSize().x);
 	float ysize = static_cast<float>(window->getSize().y);
 
-	this->camera = new sf::View(sf::FloatRect({ 0.f, 0.f }, { xsize, ysize }));
 
 
 }
@@ -40,23 +39,53 @@ void Game::initBackground()
 		std::cout << "Failed to load background" << std::endl;
 }
 
+void Game::initFonts()
+{
+	if(!font.openFromFile("Assets/Fonts/GameFont.ttf"))
+	{
+		std::cout << "Failed to load font!" << std::endl;
+	}
+	else
+	{
+		std::cout << "Font loaded!" << std::endl;
+	}
+}
 
-// Constructor / Desctructor
-Game::Game() : test_level("Assets/Levels/Test_level/test.txt", "Assets/Levels/Test_level/Snow.png", "Assets/Backgrounds/parallax2.png")
+void Game::initMainMenu()
+{
+	this->mainMenu = new Menu(this->font);
+
+	this->mainMenu->addOption("Play", [&]() {
+		this->currentGameState = gameStates::Playing;
+		this->player.respawn(test_level);
+		});
+
+	this->mainMenu->addOption("Exit", [&]() {
+		this->window->close();
+		});
+}
+
+
+
+// Constructor / Destructor
+Game::Game() : test_level("Assets/Levels/Test_level/test3_1.txt", "Assets/Levels/Test_level/Snow.png", "Assets/Backgrounds/parallax2.png", 
+	true, {189, 1}), currentGameState(gameStates::MainMenu)
 {
 	this->initVariables();
 	this->initWindow();
-	this->test_level.InitView(*window);
-	//this->initBackground();
-	//this->player.setPosition({10.f, window->getSize().y  - player.getPlayerHeight()});
-	this->player.setPosition({10.f, 10.f});
+	this->initFonts();
+	this->initMainMenu();
+
+	this->camera = this->test_level.InitView(*window);
+	
+	//this->player.respawn(test_level);
 }
 
 Game::~Game()
 {
 	delete this->window;
 	delete this->backgroundSprite;
-	delete this->camera;
+	delete this->mainMenu;
 }
 
 
@@ -77,8 +106,19 @@ void Game::pollEvents()
 void Game::update(float dt)
 {
 	this->pollEvents();
-	player.update(dt, test_level, *window);
-	this->test_level.update(dt, *window, player.getPlayerPosition());
+
+	if (this->currentGameState == gameStates::MainMenu)
+	{
+		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
+		this->window->setView(*this->camera);
+		this->mainMenu->update(*window, this->camera->getCenter(), this->camera->getSize());
+	}
+
+	if (currentGameState == gameStates::Playing)
+	{
+		player.update(dt, test_level, *window);
+		this->test_level.update(dt, *window, player.getPlayerPosition());
+	}
 }
 
 void Game::render()
@@ -91,11 +131,21 @@ void Game::render()
 
 	this->window->clear(sf::Color(20, 24, 45));
 	//window->draw(*this->backgroundSprite);
-	this->test_level.DrawLevel(*window);
 
-	
-	this->player.render(*window);
+	if (this->currentGameState == gameStates::MainMenu)
+	{
+		this->test_level.DrawBackground(*window);
+		this->mainMenu->draw(*window, this->camera->getCenter(), this->camera->getSize());
 
+		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f)); 
+		this->window->setView(*this->camera);
+	}
+
+	if (this->currentGameState == gameStates::Playing)
+	{
+		this->test_level.DrawLevel(*window);
+		this->player.render(*window);
+	}
 
 	window->display();
 }

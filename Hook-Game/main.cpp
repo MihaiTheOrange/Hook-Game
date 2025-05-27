@@ -1,10 +1,9 @@
 #include "Game.h"
 #include <SFML/Graphics.hpp>
 
-//TO DO: 
+// TO DO: 
 // de organizat clasa Player(bafta)
 // muzica - probabil nu apuc
-// timer pentru animatii de terminat!
 
 int main()
 {

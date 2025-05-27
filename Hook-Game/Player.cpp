@@ -5,7 +5,8 @@
 Player::Player() :originalHeight(48.f), originalWidth(24.f), frameIndex(0), animationTimer(0.f), 
 movementSpeed(5.f), velocity(0.f, 0.f), desiredMovement(0.f, 0.f), onGround(false), isSliding(false), 
 jumpPressed(false), leftPressed(false), rightPressed(false), isSwinging(false), playerHeight(0.f), 
-playerWidth(0.f), scalingFactor({ 0.8f, 0.8f }), currentAnimation(AnimationStates::IDLE), numberOfFrames(0)
+playerWidth(0.f), scalingFactor({ 0.8f, 0.8f }), currentAnimation(AnimationStates::IDLE), numberOfFrames(0),
+isBouncing(false), frozenAnimation(false), isClimbing(false), isHanging(false)
 {
 	if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
 	{
@@ -31,7 +32,7 @@ playerWidth(0.f), scalingFactor({ 0.8f, 0.8f }), currentAnimation(AnimationState
 
 
 		this->loadAnimations();
-		this->setPlayerAnimation(AnimationStates::RUNNING);
+		this->setPlayerAnimation(AnimationStates::IDLE);
 		this->numberOfFrames = this->Animations[this->currentAnimation].frames.size();
 		this->frameIndex++;
 	}
@@ -60,7 +61,12 @@ void Player::setPlayerAnimation(AnimationStates state)
 		//this->playerSprite->setOrigin({ playerWidth / 2.f, playerHeight / 2.f });
 		this->playerSprite->setScale(scalingFactor);
 		this->numberOfFrames = this->Animations[state].frames.size();
-		std::cout << "number of frames " << this->numberOfFrames << std::endl;
+		//std::cout << "number of frames " << this->numberOfFrames << std::endl;
+
+		if(this->mirrored)
+			this->playerSprite->setScale({ -scalingFactor.x, scalingFactor.y });
+		else
+			this->playerSprite->setScale({ scalingFactor.x, scalingFactor.y });
 
 	}
 	else
@@ -108,6 +114,7 @@ void Player::move(sf::Vector2f &velocity, Level &level, float dt)  //Nu ma intre
 	}*/
 	if (velocity.y == 0 || onGround == true)
 		isSliding = false;
+
 
 	if (velocity.x > 0 && isCollidingRight(level, playerBound, velocity.x, dt))
 	{
@@ -222,6 +229,25 @@ bool Player::isCollidingUp(Level& level, sf::FloatRect& playerBounds, float dt)
 	return false;
 }
 
+bool Player::checkWinCondition(Level& level)
+{
+	sf::Vector2f winPosition = level.getWinPosition();
+	sf::Vector2f playerCenterPosition = this->getPlayerPosition() + sf::Vector2f(playerWidth / 2.f, playerHeight / 2.f);
+	sf::Vector2f difference = winPosition - playerCenterPosition;
+	float tileSize = static_cast<float>(level.getTileSize());
+
+	//std::cout << playerCenterPosition.x << " " << playerCenterPosition.y << std::endl;
+	//std::cout << winPosition.x << " " << winPosition.y << std::endl;
+	//std::cout << difference.x << " " << difference.y << std::endl;
+
+	if (difference.x >= -tileSize && difference.x <= tileSize && difference.y >= -tileSize && difference.y <= tileSize)
+	{
+		return true;
+		std::cout << "won";
+	}
+	return false;
+}
+
 void Player::updateOnGround(Level& level)
 {
 	if (velocity.y < 0)
@@ -248,7 +274,7 @@ void Player::updateOnGround(Level& level)
 
 void Player::apllyGravity(float dt)
 {
-	if (!onGround && isSliding == false)
+	if (!onGround && isSliding == false && velocity.y < this->terminalVelocity)
 	{
 		//std::cout << velocity.y << "gravity" << std::endl;
 		velocity.y += gravity * dt;
@@ -260,18 +286,35 @@ void Player::apllyGravity(float dt)
 void Player::update(float dt, Level& level, sf::RenderWindow &window)
 {
 	//std::cout << "direction hook" << this->hook->getDirection().x << " " << this->hook->getDirection().y << " " << isSwinging << std::endl;
+	if(!jumpPressed)
+		this->isBouncing = false;
+
 
 	this->updateOnGround(level);
 	this->apllyGravity(dt);
 	this->handleInputs(level, dt, window);
 
+	this->freezeAnimCheck();
+	this->handleAnimations(dt);
+
+	if(checkWinCondition(level))
+	{
+		std::cout << "You win!" << std::endl;
+	}
+
+	if (this->getPlayerPosition().y > level.getLevelHeight())
+		this->respawn(level);
+
+
 	if (leftPressed)
 	{
 		this->playerSprite->setScale({-scalingFactor.x, scalingFactor.y});
+		this->mirrored = true;
 	}
 	else if (rightPressed)
 	{
 		this->playerSprite->setScale({ scalingFactor.x, scalingFactor.y });
+		this->mirrored = false;
 	}
 
 	//std::cout << "player " << this->playerHitbox.getPosition().x << " " << this->playerHitbox.getPosition().y << std::endl;
@@ -282,7 +325,7 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 
 	//Actualizare animatie
 	this->animationTimer += dt;
-	if (animationTimer > 0.2f)
+	if (animationTimer > Animations[currentAnimation].animationSpeed && !frozenAnimation)
 	{
 		this->playerSprite->setTextureRect(sf::IntRect({ this->frameIndex * 48, 0 }, { 48, 48 }));
 		this->frameIndex = (this->frameIndex+1) % this->numberOfFrames;
@@ -311,6 +354,60 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	this->updateBounds();
 
 	
+}
+
+void Player::handleAnimations(float dt)
+{
+	//std::cout << this->rightPressed << " " << this->leftPressed << std::endl;
+	if (this->isBouncing)
+	{
+		this->setPlayerAnimation(AnimationStates::BOUNCING);
+		return;
+	}
+	if(this->isClimbing || this->isHanging)
+	{
+		this->setPlayerAnimation(AnimationStates::CLIMBING);
+		return;
+	}
+	if (this->isSwinging)
+	{
+		this->setPlayerAnimation(AnimationStates::JUMPING);
+		return;
+	}
+	else if (onGround && (velocity.x == 0.f || this->rightPressed == false && this->leftPressed == false))
+	{
+		this->setPlayerAnimation(AnimationStates::IDLE);
+		return;
+	}
+	else if (onGround && velocity.x != 0.f)
+	{
+		this->setPlayerAnimation(AnimationStates::RUNNING);
+		return;
+	}
+	else if (!onGround && velocity.y < 0.f)
+	{
+		this->setPlayerAnimation(AnimationStates::JUMPING);
+		return;
+	}
+	else if (!onGround && velocity.y > 0.f)
+	{
+		this->setPlayerAnimation(AnimationStates::JUMPING);
+		return;
+	}
+}
+
+void Player::freezeAnimCheck()
+{
+	if( this->hook->isAttached() && !this->onGround && !isClimbing && !isSwinging)
+	{
+		this->frozenAnimation = true;
+		this->isHanging = true;
+	}
+	else
+	{
+		this->frozenAnimation = false;
+		this->isHanging = false;
+	}
 }
 
 void Player::maxLengthHookCheck()
@@ -447,11 +544,15 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && this->hook->isAttached())
 	{
 		hook->shortenHook(dt);
+		this->isClimbing = true;
 	}
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) && this->hook->isAttached())
 	{
 		hook->lengthenHook(dt);
+		this->isClimbing = true;
 	}
+	else
+		this->isClimbing = false;
 
 	//Saritura
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
@@ -473,6 +574,7 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 				this->bounceCooldown = bounceCooldownTime;
 				this->airControlRestoreCooldown = airControlRestoreCooldownTime;
 				jumpPressed = true;
+				isBouncing = true;
 			}
 			else if (canBounceLeft(level, playerBound))
 			{
@@ -483,6 +585,7 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 				this->bounceCooldown = bounceCooldownTime;
 				this->airControlRestoreCooldown = airControlRestoreCooldownTime;
 				jumpPressed = true;
+				isBouncing = true;
 			}
 		}
 
@@ -565,6 +668,8 @@ void Player::loadAnimations()
 	idle.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
 	idle.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
 	idle.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	
+	idle.animationSpeed = 0.2f; // setam viteza animatiei
 	Animations[AnimationStates::IDLE] = idle;
 
 	Animation run;
@@ -575,6 +680,8 @@ void Player::loadAnimations()
 	run.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
 	run.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
 	run.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+
+	run.animationSpeed = 0.1f; 
 	Animations[AnimationStates::RUNNING] = run;
 
 	Animation jump;
@@ -583,7 +690,33 @@ void Player::loadAnimations()
 	jump.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
 	jump.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
 	jump.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+
+	jump.animationSpeed = 0.2f;
 	Animations[AnimationStates::JUMPING] = jump;
+
+	Animation bounce;
+	bounce.texture.loadFromFile("Assets/Player/Textures/doublejump_sheet.png");
+	bounce.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+	bounce.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+	bounce.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+	bounce.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	bounce.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+	bounce.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+
+	bounce.animationSpeed = 0.1f;
+	Animations[AnimationStates::BOUNCING] = bounce;
+
+	Animation climb;
+	climb.texture.loadFromFile("Assets/Player/Textures/climb_sheet.png");
+	climb.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+	climb.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+	climb.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+	climb.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+	climb.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+	climb.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+
+	climb.animationSpeed = 0.2f;
+	Animations[AnimationStates::CLIMBING] = climb;
 
 	this->currentAnimation = AnimationStates::IDLE;
 
@@ -592,7 +725,13 @@ void Player::loadAnimations()
 
 void Player::render(sf::RenderTarget& target)
 {
-	this->drawHitbox(target);
+	//this->drawHitbox(target);
 	target.draw(*this->playerSprite);
 	this->hook->draw(target);
+}
+
+void Player::respawn(Level& level)
+{
+	this->hook->detach();
+	this->setPlaterPosition(level.getSpawnPosition());
 }

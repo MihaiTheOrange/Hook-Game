@@ -15,6 +15,7 @@ class Player
 private:
 	//Constante
 	const float speed = 200.f;   
+	const float terminalVelocity = 2000.f; 
 	const float jumpStrength = 300.f;
 	const float jumpStrengthX = 150.f;
 	const float gravity = 900.f;
@@ -38,14 +39,18 @@ private:
 	{
 		IDLE,
 		RUNNING,
-		JUMPING
+		JUMPING,
+		BOUNCING,
+		CLIMBING
 	} currentAnimation;
+
+	bool mirrored = false;
 
 	struct Animation
 	{
 		sf::Texture texture;
 		std::vector<sf::IntRect> frames;
-		float animationSpeed; // Timpul unui cadru in secunde
+		float animationSpeed = 0.f; // Timpul unui cadru in secunde
 	};
 
 	std::unordered_map<AnimationStates, Animation> Animations;
@@ -87,6 +92,10 @@ private:
 	bool leftPressed;
 	bool rightPressed;
 	bool isSwinging;
+	bool isBouncing;
+	bool isClimbing;
+	bool isHanging;
+	bool frozenAnimation;
 
 	 //Metode private
 	void updateBounds();
@@ -120,13 +129,20 @@ public:
 	bool isCollidingLeft(Level& level, sf::FloatRect& playerBounds, float velocityX, float dt);
 	bool isCollidingUp(Level& level, sf::FloatRect& playerBounds, float dt);
 
+	bool checkWinCondition(Level& level);
+
 	void updateOnGround(Level& level);
 
 	void apllyGravity(float dt);
 
 	void update(float dt, Level& level, sf::RenderWindow& window);
+	void handleAnimations(float dt);
+	void freezeAnimCheck();
+
 	void maxLengthHookCheck();
 
 	void render(sf::RenderTarget &target);
+
+	void respawn(Level& level);
 };
 

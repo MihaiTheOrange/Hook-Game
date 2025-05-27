@@ -1,6 +1,7 @@
 #include "Level.h"
 
-Level::Level(const char* filename, const char* tilefile, const char* parallaxFile) : tile(nullptr)
+Level::Level(const char* filename, const char* tilefile, const char* parallaxFile, bool hasBackground, sf::Vector2u spawnPoint) : 
+	tile(nullptr), spawnPoint(spawnPoint), hasBackgroundLayer(hasBackground), winPosition(0.f, 0.f)
 {
 	LoadLevelFromFile(filename, tilefile);
 	if (!parallaxTexture.loadFromFile(parallaxFile))
@@ -24,6 +25,16 @@ Level::~Level()
 		delete[] levelMatrix[i];
 	}
 	delete[] levelMatrix;
+
+	if (hasBackgroundLayer)
+	{
+		for (int i = 0; i < rows; i++)
+		{
+			delete[] backgroundLayerMatrix[i];
+		}
+		delete[] backgroundLayerMatrix;
+	}
+
 	delete tile;
 	delete view;
 	delete parallaxSprite;
@@ -31,7 +42,7 @@ Level::~Level()
 
 }
 
-void Level::InitView(sf::RenderWindow& window)
+sf::View* Level::InitView(sf::RenderWindow& window)
 {
 	// initializam view-ul apoi il setam pentru a incepe in partea de start a nivelului
 	float xsize = static_cast<float>(window.getSize().x);
@@ -45,27 +56,27 @@ void Level::InitView(sf::RenderWindow& window)
 
 	//Filtru de fundal
 	this->backgroundFilter.setSize(sf::Vector2f(window.getSize()));
-	this->backgroundFilter.setFillColor(sf::Color(20, 40, 40, 50));
+	this->backgroundFilter.setFillColor(sf::Color(20, 40, 40, 100));
 
 	//background parallax
 	int posY = 0;
-	for (int i = 0; i < NUM_LAYERS; ++i) 
+	for (int i = 0; i < NUM_LAYERS; ++i)
 	{
 		float layerHeight = layerHeights[i];
 
-		int numOfLayers = this->getLevelWidth()/LAYER_WIDTH;
+		int numOfLayers = this->getLevelWidth() / LAYER_WIDTH;
 
-		sf::RectangleShape layer(sf::Vector2f(static_cast<float>(LAYER_WIDTH-30)* numOfLayers*4, layerHeight));
+		sf::RectangleShape layer(sf::Vector2f(static_cast<float>(LAYER_WIDTH - 30) * numOfLayers * 4, layerHeight));
 		layer.setTexture(&parallaxTexture);
 
-		if(i > 0)
+		if (i > 0)
 			posY += (int)layerHeights[i - 1];
 		std::cout << i << " " << posY << std::endl;
 
 		//if (i == NUM_LAYERS-1)
 		//	posY -= layerHeights[i];
 
-		layer.setTextureRect(sf::IntRect({ 0, posY }, { LAYER_WIDTH*numOfLayers*4, (int)layerHeight }));
+		layer.setTextureRect(sf::IntRect({ 0, posY }, { LAYER_WIDTH * numOfLayers * 4, (int)layerHeight }));
 
 		backgroundLayers.push_back(layer);
 
@@ -74,7 +85,9 @@ void Level::InitView(sf::RenderWindow& window)
 	
 
 	view->zoom(0.5f);
+
 	window.setView(*view);
+	return this->view;
 }
 
 void Level::LoadLevelFromFile(const char* filename, const char* tilefile)
@@ -95,6 +108,25 @@ void Level::LoadLevelFromFile(const char* filename, const char* tilefile)
 			for (int j = 0; j < columns; j++)
 			{
 				file >> levelMatrix[i][j];
+				if (levelMatrix[i][j] == WIN_TILE)
+				{
+					float row = static_cast<float>(i) * static_cast<float>(tileSize);
+					float column = static_cast<float>(j) * static_cast<float>(tileSize);
+					winPosition = { column, row};
+					std::cout << winPosition.x << " " << winPosition.y << std::endl;
+				}
+			}
+		}
+		if (hasBackgroundLayer)
+		{
+			backgroundLayerMatrix = new int* [rows];
+			for (int i = 0; i < rows; i++)
+			{
+				backgroundLayerMatrix[i] = new int[columns];
+				for (int j = 0; j < columns; j++)
+				{
+					file >> backgroundLayerMatrix[i][j];
+				}
 			}
 		}
 	}
@@ -140,11 +172,13 @@ void Level::update(float dt, sf::RenderWindow& window,const sf::Vector2f& player
 
 void Level::DrawBackground(sf::RenderWindow& window)
 {
+
 	//Background parallax
 	sf::Vector2f cameraCenter = view->getCenter();
 	sf::Vector2f viewSize = view->getSize();
-	float mapHeight = getLevelHeight();
-
+	
+	this->backgroundFilter.setPosition(cameraCenter - viewSize / 2.f);
+	
 
 	float curHeight = this->heightSum;
 
@@ -164,14 +198,13 @@ void Level::DrawBackground(sf::RenderWindow& window)
 
 		
 
-		//float yPosition = mapHeight - (NUM_LAYERS - i) * layerHeight - 10 * tileSize;
 
 		// Scroll offset based on parallax
 		float xOffset = cameraCenter.x * (1 - factor) - layerWidth / 4;
 
 	
 
-		//float startX = xOffset - std::fmod(xOffset, layerWidth) - layerWidth*10;
+
 
 		// Calculeaza cate tile-uri sunt necesare pentru a umple ecranul
 		int tilesNeeded = static_cast<int>(std::ceil(viewSize.x / layerWidth)) + 2;
@@ -182,9 +215,36 @@ void Level::DrawBackground(sf::RenderWindow& window)
 			layer.setPosition({ xOffset, yPosition });
 			window.draw(layer);
 		}
-		window.draw(backgroundFilter);
-		//view->zoom(2.f);
+
+
 	}
+
+	if (hasBackgroundLayer)
+	{
+		for (int i = 0; i < rows; i++)
+		{
+			for (int j = 0; j < columns; j++)
+			{
+				int tileIndex = backgroundLayerMatrix[i][j] - 1;
+				if (tileIndex < 0)
+					continue;
+				//std::cout << tileIndex << std::endl;
+				int tileX = tileIndex % (tileset.getSize().x / tileSize);
+				int tileY = tileIndex / (tileset.getSize().x / tileSize);
+
+				this->tile->setTextureRect(sf::IntRect({ tileX * tileSize, tileY * tileSize }, { tileSize, tileSize }));
+				this->tile->setScale(this->scalingFactor);
+
+				float posX = (float)(j * tileSize);
+				float posY = (float)(i * tileSize) + 8; //de ce +8?
+				//std::cout << j << " " << i << std::endl;
+				this->tile->setPosition({ posX, posY });   // scaling scos de pus *2 la ambele reminder
+				window.draw(*tile);
+			}
+		}
+	}
+
+		window.draw(backgroundFilter);
 
 }
 
@@ -215,7 +275,7 @@ void Level::DrawLevel(sf::RenderWindow& window)
 			this->tile->setScale(this->scalingFactor);
 
 			float posX = (float)(j * tileSize);
-			float posY = (float)(i * tileSize)+8;
+			float posY = (float)(i * tileSize) + 8; //de ce +8?
 			//std::cout << j << " " << i << std::endl;
 			this->tile->setPosition({posX, posY});   // scaling scos de pus *2 la ambele reminder
 			window.draw(*tile);
@@ -250,6 +310,12 @@ sf::Vector2f Level::getTilePosition(int row, int column)
 	return {(float)(row * this->tileSize), (float)(column*this->tileSize+8)};
 }
 
+sf::Vector2f Level::getSpawnPosition()
+{
+	std::cout << "Spawn: " << this->spawnPoint.x << " " << this->spawnPoint.y << std::endl;
+	return { static_cast<float>(this->spawnPoint.y * this->tileSize), static_cast<float>(this->spawnPoint.x * this->tileSize)}; 
+}
+
 int Level::getTileSize()
 {
 	return this->tileSize;  //*2 scos de pus reminder
@@ -265,9 +331,24 @@ int Level::getLevelWidth()
 	return this->columns * this->tileSize; //*2 scos de pus reminder
 }
 
+sf::Vector2f Level::getViewCenter() const
+{
+	return view->getCenter();
+}
+
+sf::Vector2f Level::getWinPosition() const
+{
+	return this->winPosition;
+}
+
 sf::Vector2i Level::coordsToLevelPos(const sf::Vector2f& coords)
 {
 	int x = coords.x / this->getTileSize();
 	int y = coords.y / this->getTileSize();
 	return { x, y };
+}
+
+bool Level::checkWinCondition(const sf::Vector2f& playerPos) const
+{
+	return false;
 }

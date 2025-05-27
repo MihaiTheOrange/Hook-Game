@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "Level.h"
 #include "Rope.h"
+#include "Menu.h"
 
 /*
 	Clasa va fi engine-ul jocului
@@ -16,6 +17,15 @@ class Game
 {
 private:
 	//Variabile
+
+	enum class gameStates {
+		MainMenu,
+		Playing,
+		Won
+	}currentGameState;
+
+	sf::Font font;
+
 	sf::RenderWindow* window;
 	sf::VideoMode videoMode;
 
@@ -24,6 +34,7 @@ private:
 	sf::Texture backgroundTexture;
 	sf::Sprite *backgroundSprite;
 
+	Menu* mainMenu;
 	Player player;
 	Level test_level;
 
@@ -34,6 +45,9 @@ private:
 	void initVariables();
 	void initWindow();
 	void initBackground();
+	void initFonts();
+	void initMainMenu();
+
 
 public:
 	// Constructor / Desctructor
