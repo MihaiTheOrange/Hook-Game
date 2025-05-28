@@ -6,39 +6,47 @@ Player::Player() :originalHeight(48.f), originalWidth(24.f), frameIndex(0), anim
 movementSpeed(5.f), velocity(0.f, 0.f), desiredMovement(0.f, 0.f), onGround(false), isSliding(false), 
 jumpPressed(false), leftPressed(false), rightPressed(false), isSwinging(false), playerHeight(0.f), 
 playerWidth(0.f), scalingFactor({ 0.8f, 0.8f }), currentAnimation(AnimationStates::IDLE), numberOfFrames(0),
-isBouncing(false), frozenAnimation(false), isClimbing(false), isHanging(false)
+isBouncing(false), frozenAnimation(false), isClimbing(false), isHanging(false), calledCout(false), clicked(true)
 {
-	if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
+	try
 	{
-		std::cout << "Player Image loaded" << std::endl;
-		this->playerSprite = new sf::Sprite(playerTexture);
-		this->playerSprite->setTextureRect(sf::IntRect({this->frameIndex*48, 0}, {48, 48}));
+		if (this->playerTexture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
+		{
+			std::cout << "Player Image loaded" << std::endl;
+			this->playerSprite = new sf::Sprite(playerTexture);
+			this->playerSprite->setTextureRect(sf::IntRect({ this->frameIndex * 48, 0 }, { 48, 48 }));
 
-		this->playerHeight = this->originalHeight * this->scalingFactor.y;
-		this->playerWidth = this->originalWidth * this->scalingFactor.x;
-
-
-		this->playerSprite->scale(scalingFactor);
-		this->playerSprite->setOrigin({ this->playerWidth / 2.f, this->playerHeight / 2.f });
-
-		
-		this->playerHitbox.setSize({ playerWidth, playerHeight });
-		this->playerHitbox.setFillColor(sf::Color::Transparent);
-		this->playerHitbox.setOutlineColor(sf::Color::Red);
-		this->playerHitbox.setOutlineThickness(2.f);
-
-		this->playerHeight = this->playerHeight + heightOffset;
-		this->playerWidth = this->playerWidth + widthOffset;
+			this->playerHeight = this->originalHeight * this->scalingFactor.y;
+			this->playerWidth = this->originalWidth * this->scalingFactor.x;
 
 
-		this->loadAnimations();
-		this->setPlayerAnimation(AnimationStates::IDLE);
-		this->numberOfFrames = this->Animations[this->currentAnimation].frames.size();
-		this->frameIndex++;
+			this->playerSprite->scale(scalingFactor);
+			this->playerSprite->setOrigin({ this->playerWidth / 2.f, this->playerHeight / 2.f });
+
+
+			this->playerHitbox.setSize({ playerWidth, playerHeight });
+			this->playerHitbox.setFillColor(sf::Color::Transparent);
+			this->playerHitbox.setOutlineColor(sf::Color::Red);
+			this->playerHitbox.setOutlineThickness(2.f);
+
+			this->playerHeight = this->playerHeight + heightOffset;
+			this->playerWidth = this->playerWidth + widthOffset;
+
+
+			this->loadAnimations();
+			this->setPlayerAnimation(AnimationStates::IDLE);
+			this->numberOfFrames = this->Animations[this->currentAnimation].frames.size();
+			this->frameIndex++;
+		}
+		else
+		{
+			std::string mesaj = "Eroare la incarcarea imaginii platyerului";
+			throw(mesaj);
+		}
 	}
-	else
+	catch (std::string msg)
 	{
-		std::cout << "Player image load failed!" << std::endl;
+		std::cerr << msg << std::endl;
 	}
 	this->hook = new Hook();
 
@@ -171,15 +179,6 @@ void Player::move(sf::Vector2f &velocity, Level &level, float dt)  //Nu ma intre
 
 	this->playerSprite->move({ velocity.x * dt, velocity.y * dt });
 
-	/*if (this->isSwinging)
-	{
-		if (this->hook->longerThanMaxLength())
-		{
-			std::cout << "hook length I got HERE" << this->hook->getHookLength() << std::endl;
-			this->playerSprite->setPosition(this->hook->getAnchorPoint() - this->hook->getDirection() * this->hook->getHookLength());
-		}
-	}*/
-
 }
 
 
@@ -243,7 +242,6 @@ bool Player::checkWinCondition(Level& level)
 	if (difference.x >= -tileSize && difference.x <= tileSize && difference.y >= -tileSize && difference.y <= tileSize)
 	{
 		return true;
-		std::cout << "won";
 	}
 	return false;
 }
@@ -297,10 +295,7 @@ void Player::update(float dt, Level& level, sf::RenderWindow &window)
 	this->freezeAnimCheck();
 	this->handleAnimations(dt);
 
-	if(checkWinCondition(level))
-	{
-		std::cout << "You win!" << std::endl;
-	}
+	
 
 	if (this->getPlayerPosition().y > level.getLevelHeight())
 		this->respawn(level);
@@ -596,25 +591,45 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
 	{
-		sf::Vector2i mouseScreenPos = sf::Mouse::getPosition(window);
-		sf::Vector2f mouseWorldPos = window.mapPixelToCoords(mouseScreenPos);
+		if (!clicked)
+		{
+			sf::Vector2i mouseScreenPos = sf::Mouse::getPosition(window);
+			sf::Vector2f mouseWorldPos = window.mapPixelToCoords(mouseScreenPos);
+
+			sf::Vector2f playerPos = this->playerHitbox.getPosition();
+
+			this->hook->shoot(playerPos, mouseWorldPos, level, this->getPlayerDimensions());
+		}
 		
-		sf::Vector2f playerPos = this->playerHitbox.getPosition();
-		
-		this->hook->shoot(playerPos, mouseWorldPos, level, this->getPlayerDimensions());
+		this->clicked = true;
 	}
 	else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && this->hook->isAttached())
 	{
 		this->hook->detach();
 	}
+	else
+		clicked = false;
+
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
+	{
+		if (calledCout == false)
+		{
+			std::cout << *this;
+			calledCout = true;
+		}
+	}
+	else
+		calledCout = false;
+
 
 	this->velocity += this->desiredMovement;
 	if (this->desiredMovement.x != 0.f)
 		this->velocity.x = 0.7f * this->velocity.x + 0.3f * this->desiredMovement.x;
 
+	
+	
 	this->move(velocity, level, dt);
-
-	//std::cout << "velocity" << this->velocity.x*dt << " " << this->velocity.y*dt << std::endl;
 }
 
 bool Player::canBounceLeft(Level& level, sf::FloatRect playerBounds)
@@ -662,64 +677,91 @@ bool Player::canBounceRight(Level& level, sf::FloatRect playerBounds)
 
 void Player::loadAnimations()
 {
-	Animation idle;
-	idle.texture.loadFromFile("Assets/Player/Textures/idle_sheet.png");
-	idle.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));	// setam pozitia fiecarui cadru in textura
-	idle.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
-	idle.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
-	idle.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
-	
-	idle.animationSpeed = 0.2f; // setam viteza animatiei
-	Animations[AnimationStates::IDLE] = idle;
+	try
+	{
+		Animation idle;
+		if (idle.texture.loadFromFile("Assets/Player/Textures/idle_sheet.png"))
+		{
+			idle.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));	// setam pozitia fiecarui cadru in textura
+			idle.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+			idle.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+			idle.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
 
-	Animation run;
-	run.texture.loadFromFile("Assets/Player/Textures/run_sheet.png");
-	run.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
-	run.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
-	run.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
-	run.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
-	run.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
-	run.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+			idle.animationSpeed = 0.2f; // setam viteza animatiei
+			Animations[AnimationStates::IDLE] = idle;
+		}
+		else
+			throw("Idle animation not loaded");
 
-	run.animationSpeed = 0.1f; 
-	Animations[AnimationStates::RUNNING] = run;
+		Animation run;
+		if (run.texture.loadFromFile("Assets/Player/Textures/run_sheet.png"))
+		{
+			run.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+			run.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+			run.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+			run.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+			run.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+			run.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
 
-	Animation jump;
-	jump.texture.loadFromFile("Assets/Player/Textures/jump_sheet.png");
-	jump.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
-	jump.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
-	jump.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
-	jump.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+			run.animationSpeed = 0.1f;
+			Animations[AnimationStates::RUNNING] = run;
+		}
+		else
+			throw("Run animation not loaded");
+		Animation jump;
+		if (jump.texture.loadFromFile("Assets/Player/Textures/jump_sheet.png"))
+		{
+			jump.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+			jump.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+			jump.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+			jump.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
 
-	jump.animationSpeed = 0.2f;
-	Animations[AnimationStates::JUMPING] = jump;
+			jump.animationSpeed = 0.2f;
+			Animations[AnimationStates::JUMPING] = jump;
+		}
+		else
+			throw("Jump animation not loaded");
+		Animation bounce;
+		if (bounce.texture.loadFromFile("Assets/Player/Textures/doublejump_sheet.png"))
+		{
+			bounce.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+			bounce.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+			bounce.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+			bounce.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+			bounce.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+			bounce.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
 
-	Animation bounce;
-	bounce.texture.loadFromFile("Assets/Player/Textures/doublejump_sheet.png");
-	bounce.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
-	bounce.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
-	bounce.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
-	bounce.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
-	bounce.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
-	bounce.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
+			bounce.animationSpeed = 0.1f;
+			Animations[AnimationStates::BOUNCING] = bounce;
+		}
+		else
+			throw("Bounce animation not loaded");
+		Animation climb;
+		if (climb.texture.loadFromFile("Assets/Player/Textures/climb_sheet.png"))
+		{
+			climb.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
+			climb.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
+			climb.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
+			climb.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
+			climb.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
+			climb.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
 
-	bounce.animationSpeed = 0.1f;
-	Animations[AnimationStates::BOUNCING] = bounce;
+			climb.animationSpeed = 0.2f;
+			Animations[AnimationStates::CLIMBING] = climb;
+		}
+		else
+			throw("Climb animation not loaded");
 
-	Animation climb;
-	climb.texture.loadFromFile("Assets/Player/Textures/climb_sheet.png");
-	climb.frames.push_back(sf::IntRect({ 0, 0 }, { 48, 48 }));
-	climb.frames.push_back(sf::IntRect({ 1 * 48, 0 }, { 48, 48 }));
-	climb.frames.push_back(sf::IntRect({ 2 * 48, 0 }, { 48, 48 }));
-	climb.frames.push_back(sf::IntRect({ 3 * 48, 0 }, { 48, 48 }));
-	climb.frames.push_back(sf::IntRect({ 4 * 48, 0 }, { 48, 48 }));
-	climb.frames.push_back(sf::IntRect({ 5 * 48, 0 }, { 48, 48 }));
-
-	climb.animationSpeed = 0.2f;
-	Animations[AnimationStates::CLIMBING] = climb;
-
-	this->currentAnimation = AnimationStates::IDLE;
-
+		this->currentAnimation = AnimationStates::IDLE;
+	}
+	catch (const char* exception)
+	{
+		std::cerr << exception << std::endl;
+	}
+	catch (...)
+	{
+		std::cerr << "EROARE la incarcarea animatiilor" << std::endl;
+	}
 }
 
 
@@ -734,4 +776,13 @@ void Player::respawn(Level& level)
 {
 	this->hook->detach();
 	this->setPlaterPosition(level.getSpawnPosition());
+}
+
+std::ostream& operator<<(std::ostream& c, Player& p)
+{
+	char buffer[201];
+	sprintf_s(buffer, "Player Width: %.2f; Player Height: %.2f; Current velocity: x-%.2f, y-%.2f; Current position: x-%.2f, y-%.2f \n", p.playerWidth, p.playerHeight, 
+		p.velocity.x, p.velocity.y, p.getPlayerPosition().x, p.getPlayerPosition().y);
+	c << buffer;
+	return c;
 }

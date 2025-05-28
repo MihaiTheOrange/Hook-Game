@@ -63,6 +63,17 @@ void Game::initMainMenu()
 	this->mainMenu->addOption("Exit", [&]() {
 		this->window->close();
 		});
+
+	sf::Vector2f halfScreenPos = {250.f, 10.f};
+	this->mainMenu->addLabel("HOOK GAME!", 24, halfScreenPos, sf::Color::Red);
+}
+
+void Game::initWinScreen()
+{
+	this->winScreen = new Menu(this->font);
+	sf::Vector2f cenPos( this->window->getSize().x/2.f - 192.f, this->window->getSize().y/4.f );
+	std::cout << "cenPos" << cenPos.x << " " << cenPos.y << std::endl;
+	this->winScreen->addLabel("YOU WON", 48, {100.f, 100.f}, sf::Color::Yellow);
 }
 
 
@@ -78,6 +89,8 @@ Game::Game() : test_level("Assets/Levels/Test_level/test3_1.txt", "Assets/Levels
 
 	this->camera = this->test_level.InitView(*window);
 	
+	this->initWinScreen();
+
 	//this->player.respawn(test_level);
 }
 
@@ -107,13 +120,32 @@ void Game::update(float dt)
 {
 	this->pollEvents();
 
+	if (player.checkWinCondition(test_level))
+	{
+		this->currentGameState = gameStates::Won;
+	}
 	if (this->currentGameState == gameStates::MainMenu)
 	{
 		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
 		this->window->setView(*this->camera);
 		this->mainMenu->update(*window, this->camera->getCenter(), this->camera->getSize());
 	}
+	if (this->currentGameState == gameStates::Won)
+	{
+		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
+		this->window->setView(*this->camera);
+		this->winScreen->update(*window, this->camera->getCenter(), this->camera->getSize());
+		restartTimer += dt;
 
+
+		if (restartTimer >= restartAfter)
+		{
+			this->currentGameState = gameStates::MainMenu;
+			this->player.setPosition({ 0.f, 0.f });
+			this->player.update(dt, test_level, *window);
+			this->restartTimer = 0.f;
+		}
+	}
 	if (currentGameState == gameStates::Playing)
 	{
 		player.update(dt, test_level, *window);
@@ -137,8 +169,7 @@ void Game::render()
 		this->test_level.DrawBackground(*window);
 		this->mainMenu->draw(*window, this->camera->getCenter(), this->camera->getSize());
 
-		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f)); 
-		this->window->setView(*this->camera);
+	
 	}
 
 	if (this->currentGameState == gameStates::Playing)
@@ -147,6 +178,11 @@ void Game::render()
 		this->player.render(*window);
 	}
 
+	if (this->currentGameState == gameStates::Won)
+	{
+		this->test_level.DrawBackground(*window);
+		this->winScreen->draw(*window, this->camera->getCenter(), this->camera->getSize());
+	}
 	window->display();
 }
 

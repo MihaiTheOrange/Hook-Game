@@ -12,7 +12,7 @@
 
 class Player
 {
-private:
+protected:
 	//Constante
 	const float speed = 200.f;   
 	const float terminalVelocity = 2000.f; 
@@ -96,6 +96,8 @@ private:
 	bool isClimbing;
 	bool isHanging;
 	bool frozenAnimation;
+	bool calledCout;
+	bool clicked;
 
 	 //Metode private
 	void updateBounds();
@@ -144,5 +146,8 @@ public:
 	void render(sf::RenderTarget &target);
 
 	void respawn(Level& level);
+
+
+	friend std::ostream& operator << (std::ostream& c, Player& p);
 };
 

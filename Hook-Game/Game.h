@@ -16,6 +16,9 @@
 class Game
 {
 private:
+	//Constante
+	const float restartAfter = 5.f;
+	
 	//Variabile
 
 	enum class gameStates {
@@ -35,10 +38,11 @@ private:
 	sf::Sprite *backgroundSprite;
 
 	Menu* mainMenu;
+	Menu* winScreen;
 	Player player;
 	Level test_level;
 
-
+	float restartTimer = 0.f;
 
 
 	//Metode private
@@ -47,6 +51,7 @@ private:
 	void initBackground();
 	void initFonts();
 	void initMainMenu();
+	void initWinScreen();
 
 
 public:

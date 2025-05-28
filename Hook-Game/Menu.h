@@ -15,8 +15,16 @@ class Menu
 		std::function<void()> action;
 	};
 
+	struct LabelOption
+	{
+		sf::Text label;
+		sf::Vector2f relPosition;
+	};
+
 	std::vector<MenuOption> options;
 	std::vector<sf::Text> textOptions;
+
+	std::vector<LabelOption> textLabels;
 
 public:
 	Menu(sf::Font& font);
@@ -26,6 +34,7 @@ public:
 	void handleInputs(sf::RenderWindow& window, const sf::Vector2f& viewCenter, const sf::Vector2f& viewSize);
 
 	void addOption(std::string text, std::function<void()> action);
+	void addLabel(std::string text, float size, const sf::Vector2f& position, const sf::Color& color);
 
 	void update(sf::RenderWindow& window, const sf::Vector2f& viewCenter, const sf::Vector2f& viewSize);
 	void draw(sf::RenderWindow& window, const sf::Vector2f& viewCenter, const sf::Vector2f& viewSize);
