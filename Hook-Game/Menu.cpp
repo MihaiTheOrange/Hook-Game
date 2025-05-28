@@ -32,7 +32,7 @@ void Menu::handleInputs(sf::RenderWindow& window, const sf::Vector2f& viewCenter
 	for (rsize_t i = 0 ; i< textOptions.size(); ++i)
 	{
 		sf::FloatRect optionBounds = textOptions[i].getGlobalBounds();
-		if (isHovered(optionBounds, viewCenter - viewSize / 2.f, window, i) && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+		if (isHovered(optionBounds, viewCenter - viewSize / 2.f, window, i) && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !clicked)
 		{
 			options[i].action(); 
 			break; 

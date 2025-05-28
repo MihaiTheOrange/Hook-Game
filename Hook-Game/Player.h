@@ -12,7 +12,25 @@
 
 class Player
 {
+
 protected:
+enum class AnimationStates
+{
+	IDLE,
+	RUNNING,
+	JUMPING,
+	BOUNCING,
+	CLIMBING
+} currentAnimation;
+
+struct Animation
+{
+	sf::Texture texture;
+	std::vector<sf::IntRect> frames;
+	float animationSpeed = 0.f; // Timpul unui cadru in secunde
+};
+
+
 	//Constante
 	const float speed = 200.f;   
 	const float terminalVelocity = 2000.f; 
@@ -35,23 +53,8 @@ protected:
 	const float bounceCooldownTime = 0.2f;
 
 
-	enum class AnimationStates
-	{
-		IDLE,
-		RUNNING,
-		JUMPING,
-		BOUNCING,
-		CLIMBING
-	} currentAnimation;
-
 	bool mirrored = false;
 
-	struct Animation
-	{
-		sf::Texture texture;
-		std::vector<sf::IntRect> frames;
-		float animationSpeed = 0.f; // Timpul unui cadru in secunde
-	};
 
 	std::unordered_map<AnimationStates, Animation> Animations;
 
@@ -106,12 +109,12 @@ protected:
 	bool canBounceLeft(Level& level, sf::FloatRect playerBounds);
 	bool canBounceRight(Level& level, sf::FloatRect playerBounds);
 
-	void loadAnimations();
+	virtual void loadAnimations();
 	
 public:
 	//Constructor / Destructor
 	Player();
-	~Player();
+	virtual ~Player();
 
 	void setPlayerAnimation(AnimationStates state);
 

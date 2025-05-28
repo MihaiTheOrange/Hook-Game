@@ -27,6 +27,8 @@ class Menu
 	std::vector<LabelOption> textLabels;
 
 public:
+	static bool clicked;
+
 	Menu(sf::Font& font);
 	~Menu();
 

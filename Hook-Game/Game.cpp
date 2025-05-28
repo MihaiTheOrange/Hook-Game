@@ -1,5 +1,7 @@
 #include "Game.h"
 
+bool Menu::clicked = false;
+
 
 //Metode private
 void Game::initVariables()
@@ -16,9 +18,6 @@ void Game::initWindow()
 	
 	float xsize = static_cast<float>(window->getSize().x);
 	float ysize = static_cast<float>(window->getSize().y);
-
-
-
 }
 
 void Game::initBackground()
@@ -57,7 +56,12 @@ void Game::initMainMenu()
 
 	this->mainMenu->addOption("Play", [&]() {
 		this->currentGameState = gameStates::Playing;
-		this->player.respawn(test_level);
+		this->selectedPlayer->respawn(test_level);
+		});
+
+	this->mainMenu->addOption("Select Player", [&]() {
+		this->currentGameState = gameStates::SelectPlayer;
+		this->selectedPlayer->respawn(test_level);
 		});
 
 	this->mainMenu->addOption("Exit", [&]() {
@@ -76,6 +80,26 @@ void Game::initWinScreen()
 	this->winScreen->addLabel("YOU WON", 48, {100.f, 100.f}, sf::Color::Yellow);
 }
 
+void Game::initSelectPlayer()
+{
+	this->selectPlayerMenu = new Menu(this->font);
+
+	this->selectPlayerMenu->addOption("Mihaela Florea", [&]() {
+		this->selectedPlayer = &Mihaela;
+		this->selectedPlayer->respawn(test_level);
+		});
+
+	this->selectPlayerMenu->addOption("Sebastian Valhenstein", [&]() {
+		this->selectedPlayer = &Sebastian;
+		this->selectedPlayer->respawn(test_level);
+		});
+
+	this->selectPlayerMenu->addOption("Back", [&]() {
+		this->currentGameState = gameStates::MainMenu;
+		this->selectedPlayer->respawn(test_level);
+		});
+}
+
 
 
 // Constructor / Destructor
@@ -86,12 +110,15 @@ Game::Game() : test_level("Assets/Levels/Test_level/test3_1.txt", "Assets/Levels
 	this->initWindow();
 	this->initFonts();
 	this->initMainMenu();
+	this->initSelectPlayer();
 
 	this->camera = this->test_level.InitView(*window);
 	
 	this->initWinScreen();
 
-	//this->player.respawn(test_level);
+	this->selectedPlayer = &Sebastian;
+
+	//this->selectedPlayer->respawn(test_level);
 }
 
 Game::~Game()
@@ -120,16 +147,25 @@ void Game::update(float dt)
 {
 	this->pollEvents();
 
-	if (player.checkWinCondition(test_level))
+	if (selectedPlayer->checkWinCondition(test_level))
 	{
 		this->currentGameState = gameStates::Won;
 	}
+
 	if (this->currentGameState == gameStates::MainMenu)
 	{
 		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
 		this->window->setView(*this->camera);
 		this->mainMenu->update(*window, this->camera->getCenter(), this->camera->getSize());
 	}
+
+	if (this->currentGameState == gameStates::SelectPlayer)
+	{
+		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
+		this->window->setView(*this->camera);
+		this->selectPlayerMenu->update(*window, this->camera->getCenter(), this->camera->getSize());
+	}
+
 	if (this->currentGameState == gameStates::Won)
 	{
 		this->camera->setCenter(this->camera->getCenter() + sf::Vector2f(1.f, 0.f));
@@ -141,16 +177,18 @@ void Game::update(float dt)
 		if (restartTimer >= restartAfter)
 		{
 			this->currentGameState = gameStates::MainMenu;
-			this->player.setPosition({ 0.f, 0.f });
-			this->player.update(dt, test_level, *window);
+			this->selectedPlayer->setPosition({ 0.f, 0.f });
+			this->selectedPlayer->update(dt, test_level, *window);
 			this->restartTimer = 0.f;
 		}
 	}
 	if (currentGameState == gameStates::Playing)
 	{
-		player.update(dt, test_level, *window);
-		this->test_level.update(dt, *window, player.getPlayerPosition());
+		selectedPlayer->update(dt, test_level, *window);
+		this->test_level.update(dt, *window, selectedPlayer->getPlayerPosition());
 	}
+	Menu::clicked = checkForClick();
+	handleInputs();
 }
 
 void Game::render()
@@ -168,14 +206,18 @@ void Game::render()
 	{
 		this->test_level.DrawBackground(*window);
 		this->mainMenu->draw(*window, this->camera->getCenter(), this->camera->getSize());
+	}
 
-	
+	if (this->currentGameState == gameStates::SelectPlayer)
+	{
+		this->test_level.DrawBackground(*window);
+		this->selectPlayerMenu->draw(*window, this->camera->getCenter(), this->camera->getSize());
 	}
 
 	if (this->currentGameState == gameStates::Playing)
 	{
 		this->test_level.DrawLevel(*window);
-		this->player.render(*window);
+		this->selectedPlayer->render(*window);
 	}
 
 	if (this->currentGameState == gameStates::Won)
@@ -184,6 +226,20 @@ void Game::render()
 		this->winScreen->draw(*window, this->camera->getCenter(), this->camera->getSize());
 	}
 	window->display();
+}
+
+bool Game::checkForClick()
+{
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+		return true;
+	else
+		return false;
+}
+
+void Game::handleInputs()
+{
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape))
+		this->currentGameState = gameStates::MainMenu;
 }
 
 bool Game::running() const

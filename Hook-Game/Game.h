@@ -8,6 +8,7 @@
 #include "Level.h"
 #include "Rope.h"
 #include "Menu.h"
+#include "DogPlayer.h"
 
 /*
 	Clasa va fi engine-ul jocului
@@ -24,7 +25,8 @@ private:
 	enum class gameStates {
 		MainMenu,
 		Playing,
-		Won
+		Won,
+		SelectPlayer
 	}currentGameState;
 
 	sf::Font font;
@@ -38,8 +40,14 @@ private:
 	sf::Sprite *backgroundSprite;
 
 	Menu* mainMenu;
+	Menu* selectPlayerMenu;
 	Menu* winScreen;
-	Player player;
+
+	Player Mihaela;
+	DogPlayer Sebastian;
+
+	Player* selectedPlayer;
+
 	Level test_level;
 
 	float restartTimer = 0.f;
@@ -52,6 +60,7 @@ private:
 	void initFonts();
 	void initMainMenu();
 	void initWinScreen();
+	void initSelectPlayer();
 
 
 public:
@@ -63,6 +72,9 @@ public:
 	void pollEvents();
 	void update(float dt);
 	void render();
+
+	bool checkForClick();
+	void handleInputs();
 
 	bool running() const;
 };
