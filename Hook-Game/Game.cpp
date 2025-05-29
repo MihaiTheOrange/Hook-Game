@@ -116,7 +116,7 @@ Game::Game() : test_level("Assets/Levels/Test_level/test3_1.txt", "Assets/Levels
 	
 	this->initWinScreen();
 
-	this->selectedPlayer = &Sebastian;
+	this->selectedPlayer = &Mihaela;
 
 	//this->selectedPlayer->respawn(test_level);
 }

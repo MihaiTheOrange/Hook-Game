@@ -18,6 +18,7 @@ class Hook : public Rope
 	sf::Vector2f velocity;
 	float speed;
 	bool flying;
+	bool justAttached;
 	
 	bool initializedLength;
 
@@ -40,6 +41,7 @@ public:
 	float getHookLength() const;
 
 	bool longerThanMaxLength() const;
+	bool hookJustAttached();
 	
 	void shoot(const sf::Vector2f& from, const sf::Vector2f& to, Level& level, const sf::Vector2f& playerDimensions);
 	void detach();

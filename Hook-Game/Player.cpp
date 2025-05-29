@@ -463,6 +463,11 @@ void Player::handleInputs(Level& level, float dt, sf::RenderWindow& window)
 		this->isSwinging = false;
 	}
 
+	if (hook->hookJustAttached())
+	{
+		this->leftPressed = false;
+		this->rightPressed = false;
+	}
 
 	//Movement normal
 	if (this->isSwinging)
