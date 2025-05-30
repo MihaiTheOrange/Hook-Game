@@ -38,31 +38,6 @@ bool Rope::isAttached()
 	return attached;
 }
 
-//void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
-//{
-//	sf::Vector2f ropeVec = this->startPoint - this->anchorPoint;
-//	sf::Vector2f ropeDir = normalize(ropeVec);
-//	sf::Vector2f tangentDir = { -ropeDir.y, ropeDir.x };
-//
-//
-//	float torque = 4.f;
-//	float maxPower = 100.f;
-//
-//	if (this->swingPower > maxPower)
-//		this->swingPower = maxPower;
-//	else
-//		this->swingPower += torque;
-//
-//	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-//		playerVelocity += tangentDir * this->swingPower;
-//	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-//		playerVelocity += -tangentDir * this->swingPower;
-//	
-//	std::cout << "player vel" << playerVelocity.x << " " << playerVelocity.y << std::endl;
-//	std::cout << "tangent" << tangentDir.x << " " << tangentDir.y << std::endl;
-//
-//}
-
 
 // Cod furat 
 void Rope::swing(float dt, sf::Vector2f& playerVelocity, const sf::Vector2f& playerPosition, float gravity)
